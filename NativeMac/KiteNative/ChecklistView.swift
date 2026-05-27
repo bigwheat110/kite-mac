@@ -1,12 +1,63 @@
 import SwiftUI
 
+private struct ThemePalette {
+    let backgroundTop: Color
+    let backgroundBottom: Color
+    let panel: Color
+    let panelStrong: Color
+    let card: Color
+    let textPrimary: Color
+    let textSecondary: Color
+    let divider: Color
+    let accent: Color
+    let accentSoft: Color
+    let success: Color
+    let successSoft: Color
+
+    static func palette(for theme: AppTheme) -> ThemePalette {
+        switch theme {
+        case .dark:
+            return ThemePalette(
+                backgroundTop: Color(red: 0.03, green: 0.06, blue: 0.12),
+                backgroundBottom: Color(red: 0.02, green: 0.04, blue: 0.09),
+                panel: Color(red: 0.15, green: 0.19, blue: 0.28),
+                panelStrong: Color(red: 0.02, green: 0.04, blue: 0.08),
+                card: Color(red: 0.14, green: 0.18, blue: 0.27),
+                textPrimary: .white,
+                textSecondary: Color(red: 0.63, green: 0.69, blue: 0.81),
+                divider: Color.white.opacity(0.08),
+                accent: Color(red: 0.19, green: 0.83, blue: 0.42),
+                accentSoft: Color(red: 0.14, green: 0.46, blue: 0.99),
+                success: Color(red: 0.19, green: 0.83, blue: 0.42),
+                successSoft: Color(red: 0.19, green: 0.83, blue: 0.42).opacity(0.16)
+            )
+        case .light:
+            return ThemePalette(
+                backgroundTop: Color(red: 0.95, green: 0.97, blue: 1.0),
+                backgroundBottom: Color(red: 0.90, green: 0.93, blue: 0.98),
+                panel: Color.white,
+                panelStrong: Color(red: 0.96, green: 0.97, blue: 0.99),
+                card: Color(red: 0.92, green: 0.94, blue: 0.98),
+                textPrimary: Color(red: 0.12, green: 0.16, blue: 0.24),
+                textSecondary: Color(red: 0.39, green: 0.45, blue: 0.56),
+                divider: Color.black.opacity(0.08),
+                accent: Color(red: 0.11, green: 0.64, blue: 0.32),
+                accentSoft: Color(red: 0.18, green: 0.48, blue: 0.96),
+                success: Color(red: 0.11, green: 0.64, blue: 0.32),
+                successSoft: Color(red: 0.11, green: 0.64, blue: 0.32).opacity(0.10)
+            )
+        }
+    }
+}
+
 struct ChecklistView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.03, green: 0.06, blue: 0.12), Color(red: 0.02, green: 0.04, blue: 0.09)],
+                colors: [palette.backgroundTop, palette.backgroundBottom],
                 startPoint: .topLeading,
                 endPoint: .bottom
             )
@@ -17,8 +68,11 @@ struct ChecklistView: View {
                 if !store.isFocusModeEnabled {
                     ActionButtonsView()
                 }
+                Spacer()
+                    .frame(height: store.displayMode == .compact ? 6 : 12)
                 WeekStripView()
                 HabitListView()
+                    .frame(maxHeight: .infinity)
                 AddHabitBarView()
             }
             .padding(.horizontal, store.displayMode == .compact ? 12 : 18)
@@ -61,13 +115,14 @@ struct ChecklistView: View {
 
 private struct HeaderBarView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Kite 待办")
                     .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(Color(red: 0.63, green: 0.69, blue: 0.81))
+                    .foregroundStyle(palette.textSecondary)
                     .accessibilityIdentifier("app-title")
             }
 
@@ -92,6 +147,7 @@ private struct HeaderBarView: View {
 
 private struct ActionButtonsView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -122,12 +178,13 @@ private struct ActionButtonsView: View {
             .font(.system(size: 18, weight: .medium))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 44)
-            .background(Color(red: 0.14, green: 0.18, blue: 0.27), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .background(palette.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 }
 
 private struct WeekStripView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -157,13 +214,13 @@ private struct WeekStripView: View {
                                 .font(.system(size: 14, weight: .regular))
                             Spacer(minLength: 0)
                         }
-                        .foregroundStyle(item.isSelected ? Color(red: 0.19, green: 0.83, blue: 0.42) : Color.white.opacity(0.72))
+                        .foregroundStyle(item.isSelected ? palette.accent : palette.textPrimary.opacity(0.72))
                         .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
                         .background(
                             item.isSelected
-                                ? Color(red: 0.03, green: 0.06, blue: 0.12)
+                                ? palette.panelStrong
                                 : Color.clear,
                             in: RoundedRectangle(cornerRadius: 9, style: .continuous)
                         )
@@ -183,38 +240,66 @@ private struct WeekStripView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-next-button")
         }
-        .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(palette.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityIdentifier("week-strip")
     }
 }
 
 private struct HabitListView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            habitSection(for: store.pendingHabits)
-
-            if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
-                Divider()
-                    .overlay(Color.white.opacity(0.08))
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 4)
+        VStack(spacing: 12) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    habitSection(for: store.pendingHabits)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(palette.panelStrong)
+                    )
+            )
 
-            habitSection(for: store.completedHabits)
+            if !store.completedHabits.isEmpty {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("已完成")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(palette.textSecondary)
+                        Spacer()
+                        Text("\(store.completedHabits.count) 项")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(palette.textSecondary.opacity(0.86))
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 14)
+                    .padding(.bottom, 8)
+
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            habitSection(for: store.completedHabits)
+                        }
+                    }
+                    .frame(maxHeight: min(CGFloat(store.completedHabits.count) * 54 + 12, 230))
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(palette.panelStrong)
+                        )
+                )
+            }
         }
         .animation(.easeInOut(duration: 0.18), value: store.orderedHabits.map(\.id))
         .animation(.easeInOut(duration: 0.18), value: store.doneCount)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color(red: 0.02, green: 0.04, blue: 0.08))
-                )
-        )
     }
 
     @ViewBuilder
@@ -229,6 +314,7 @@ private struct HabitListView: View {
 private struct HabitRowView: View {
     @EnvironmentObject private var store: HabitViewModel
     @FocusState private var isEditorFocused: Bool
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     let habit: HabitItem
     let isLast: Bool
@@ -240,13 +326,13 @@ private struct HabitRowView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(store.isDone(habit) ? Color(red: 0.19, green: 0.83, blue: 0.42) : Color.clear)
+                        .fill(store.isDone(habit) ? palette.success : Color.clear)
                         .overlay {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .stroke(
                                     store.isDone(habit)
-                                        ? Color(red: 0.19, green: 0.83, blue: 0.42)
-                                        : Color.white.opacity(0.92),
+                                        ? palette.success
+                                        : palette.textPrimary.opacity(0.92),
                                     lineWidth: 1.8
                                 )
                         }
@@ -268,7 +354,7 @@ private struct HabitRowView: View {
                 TextField("", text: $store.editingHabitText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(palette.textPrimary)
                     .focused($isEditorFocused)
                     .accessibilityIdentifier("habit-editor-\(habit.id.uuidString)")
                     .onAppear {
@@ -292,8 +378,8 @@ private struct HabitRowView: View {
                 } label: {
                     Text(store.title(for: habit))
                         .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(store.isDone(habit) ? Color.white.opacity(0.48) : .white)
-                        .strikethrough(store.isDone(habit), color: .white.opacity(0.82))
+                        .foregroundStyle(store.isDone(habit) ? palette.textSecondary.opacity(0.85) : palette.textPrimary)
+                        .strikethrough(store.isDone(habit), color: palette.textSecondary.opacity(0.82))
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
@@ -306,7 +392,7 @@ private struct HabitRowView: View {
         }
         .padding(.horizontal, 22)
         .frame(height: 54)
-        .background(store.isDone(habit) ? Color.white.opacity(0.025) : Color.clear)
+        .background(store.isDone(habit) ? palette.successSoft : Color.clear)
         .opacity(store.isDone(habit) ? 0.82 : 1)
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
@@ -335,7 +421,7 @@ private struct HabitRowView: View {
 
         if !isLast {
             Divider()
-                .overlay(Color.white.opacity(0.05))
+                .overlay(palette.divider)
                 .padding(.horizontal, 18)
         }
     }
@@ -343,24 +429,25 @@ private struct HabitRowView: View {
 
 private struct AddHabitBarView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         HStack(spacing: 10) {
             TextField("添加一个每天都想做的事项", text: $store.draftTitle)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(palette.textPrimary)
                 .padding(.horizontal, 15)
                 .frame(height: 42)
-                .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityIdentifier("add-habit-input")
 
             Button(action: store.addHabit) {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(palette.textPrimary)
                     .frame(width: 48, height: 42)
-                    .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("add-habit-button")
@@ -398,31 +485,147 @@ private struct OverviewPanelView: View {
 
 private struct CalendarPanelView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private let weekdayHeaders = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("日期选择")
-                .font(.system(size: 20, weight: .semibold))
-            DatePicker(
-                "跳转到日期",
-                selection: Binding(
-                    get: { store.selectedDate },
-                    set: { store.select(date: $0) }
-                ),
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.graphical)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("日期总览")
+                        .font(.system(size: 26, weight: .bold))
+                    Text("按月查看每天的完成情况，并可直接跳转到当天。")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
+                }
 
-            Button("回到今天") {
-                store.jumpToToday()
-                store.activePanel = nil
+                Spacer()
+
+                HStack(spacing: 10) {
+                    Button {
+                        store.shiftMonth(by: -1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .buttonStyle(.borderless)
+
+                        Text(store.monthTitle)
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(minWidth: 120)
+
+                    Button {
+                        store.shiftMonth(by: 1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
-            .buttonStyle(.borderedProminent)
 
-            Spacer()
+            VStack(spacing: 0) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+                    ForEach(weekdayHeaders, id: \.self) { weekday in
+                        Text(weekday)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(palette.textSecondary)
+                            .frame(maxWidth: .infinity, minHeight: 34)
+                            .background(palette.panelStrong)
+                    }
+                }
+
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+                    ForEach(store.monthItems) { item in
+                        Button {
+                            store.select(date: item.date)
+                            store.activePanel = nil
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(item.dayNumber)
+                                        .font(.system(size: 16, weight: item.isSelected ? .bold : .semibold))
+                                        .foregroundStyle(dayTextColor(for: item))
+                                    Spacer()
+                                    if item.isToday {
+                                        Circle()
+                                            .fill(item.isSelected ? Color.white.opacity(0.9) : palette.accent)
+                                            .frame(width: 8, height: 8)
+                                    }
+                                }
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(item.completionSummary)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(item.isSelected ? Color.white : palette.success)
+
+                                    Text(item.pendingSummary)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(item.isSelected ? Color.white.opacity(0.88) : palette.textSecondary)
+                                        .lineLimit(1)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+                            .background(dayBackground(for: item))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .background(palette.panel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(palette.divider, lineWidth: 1)
+            )
+
+            HStack(spacing: 12) {
+                Button("回到今天") {
+                    store.jumpToToday()
+                    store.activePanel = nil
+                }
+                .buttonStyle(.borderedProminent)
+
+                Text("当前选中：\(store.selectedDateTitle)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(palette.textSecondary)
+            }
         }
-        .padding(20)
-        .frame(minWidth: 360, minHeight: 420)
+        .padding(24)
+        .background(
+            LinearGradient(colors: [palette.backgroundTop.opacity(0.92), palette.backgroundBottom.opacity(0.92)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+        .frame(minWidth: 1100, minHeight: 760)
+    }
+
+    private func dayTextColor(for item: MonthDayItem) -> Color {
+        if item.isSelected {
+            return .white
+        }
+        if item.isToday {
+            return palette.accent
+        }
+        return item.isCurrentMonth ? palette.textPrimary : palette.textSecondary.opacity(0.55)
+    }
+
+    @ViewBuilder
+    private func dayBackground(for item: MonthDayItem) -> some View {
+        if item.isSelected {
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+                .fill(LinearGradient(colors: [palette.accentSoft, palette.accentSoft.opacity(0.82)], startPoint: .topLeading, endPoint: .bottomTrailing))
+        } else if item.isToday {
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+                .fill(palette.successSoft)
+        } else if item.isCurrentMonth {
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+                .fill(palette.panel)
+        } else {
+            RoundedRectangle(cornerRadius: 0, style: .continuous)
+                .fill(palette.panelStrong)
+        }
     }
 }
 

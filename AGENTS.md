@@ -1,15 +1,26 @@
-# Agent Notes
+# 代理说明
 
-## Runtime habit
+## 当前默认工作方式
 
-- After every code change to the NativeMac app, always do all of the following before reporting back:
-  1. build the app with `xcodebuild -project /Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative.xcodeproj -scheme KiteNative -configuration Debug build`
-  2. run UI tests with `xcodebuild test -project /Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative.xcodeproj -scheme KiteNative -destination 'platform=macOS,arch=arm64'`
-  3. quit any running `KiteNative` instance
-  4. relaunch the latest built `KiteNative` app
-  5. bring `KiteNative` to the foreground
-  6. commit the current changes with a clear message
-  7. push the commit to the GitHub remote `origin`
+- 默认只修改代码，不主动运行测试。
+- 默认只修改代码，不主动执行完整的 build -> test -> restart -> commit -> push 流程。
+- 默认不主动提交 commit。
+- 默认不主动 push 到 `origin`。
+- 默认不主动重启 `KiteNative`，除非用户明确要求启动、重启或切到前台。
 
-- Do not stop after only editing files or only building. The expected workflow is edit -> build -> ui-test -> restart app -> foreground app.
-- Do not leave local-only changes behind after a completed edit cycle when the repository is in a healthy pushable state.
+## 什么时候才执行这些操作
+
+- 只有在用户明确要求“构建 / 测试 / 重启 / 提交 / 推送 / 打包”时，才执行对应步骤。
+- 如果用户只是让助手修改界面、逻辑或文案，默认只改代码，不额外做测试和提交流程。
+
+## 测试相关要求
+
+- 默认不要主动运行 `xcodebuild test`。
+- UI 测试不应影响正式使用数据。
+- 如需运行测试，应优先使用独立测试数据，不要重置用户平时使用的数据。
+
+## 当前项目使用偏好
+
+- 该项目当前以“用户本人手动体验”为主。
+- 助手只负责改代码，用户自行体验效果。
+- 如用户后续明确要求，再执行构建、测试、重启、提交或推送。

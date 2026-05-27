@@ -14,6 +14,25 @@ struct WeekDayItem: Identifiable {
     var dayLabel: String { HabitDate.dayLabel(date) }
 }
 
+struct MonthDayItem: Identifiable {
+    let date: Date
+    let isCurrentMonth: Bool
+    let isSelected: Bool
+    let isToday: Bool
+    let completionCount: Int
+    let totalCount: Int
+    let pendingSummary: String
+
+    var id: String { HabitDate.key(for: date) }
+    var dayNumber: String {
+        String(HabitDate.calendar.component(.day, from: date))
+    }
+
+    var completionSummary: String {
+        "✓ \(completionCount)/\(totalCount)"
+    }
+}
+
 struct ReminderDraft {
     var title = ""
     var hour = 20
@@ -51,6 +70,7 @@ final class HabitViewModel: ObservableObject {
     var isFocusModeEnabled: Bool { state.uiPreferences.focusModeEnabled }
     var isAlwaysOnTop: Bool { state.uiPreferences.alwaysOnTop }
     var displayMode: DisplayMode { state.uiPreferences.displayMode }
+    var theme: AppTheme { state.uiPreferences.theme }
     var dateKey: String { HabitDate.key(for: selectedDate) }
     var orderedHabits: [HabitItem] {
         let orderMap = Dictionary(uniqueKeysWithValues: state.habits.enumerated().map { ($1.id, $0) })
@@ -107,6 +127,40 @@ final class HabitViewModel: ObservableObject {
         }
     }
 
+    var monthTitle: String {
+        HabitDate.monthTitle(selectedDate)
+    }
+
+    var monthItems: [MonthDayItem] {
+        let monthAnchor = HabitDate.startOfMonth(for: selectedDate)
+        return HabitDate.monthDates(containing: selectedDate).map { date in
+            let key = HabitDate.key(for: date)
+            let completion = habits.filter { state.entries[key]?[$0.id] == true }.count
+            let pending = habits
+                .filter { state.entries[key]?[$0.id] != true }
+                .map { title(for: $0, on: date) }
+            let pendingSummary: String
+            switch pending.count {
+            case 0:
+                pendingSummary = "○ 无"
+            case 1...2:
+                pendingSummary = "○ \(pending.joined(separator: "、"))"
+            default:
+                pendingSummary = "○ \(pending.prefix(2).joined(separator: "、")) +\(pending.count - 2)"
+            }
+
+            return MonthDayItem(
+                date: date,
+                isCurrentMonth: HabitDate.isInSameMonth(date, as: monthAnchor),
+                isSelected: HabitDate.startOfDay(date) == HabitDate.startOfDay(selectedDate),
+                isToday: HabitDate.isToday(date),
+                completionCount: completion,
+                totalCount: habits.count,
+                pendingSummary: pendingSummary
+            )
+        }
+    }
+
     var focusButtonTitle: String {
         state.focusSession.active ? "结束专注" : "开始专注"
     }
@@ -116,11 +170,16 @@ final class HabitViewModel: ObservableObject {
     }
 
     func title(for habit: HabitItem) -> String {
-        if let override = state.dailyOverrides[dateKey]?[habit.id] {
+        title(for: habit, on: selectedDate)
+    }
+
+    func title(for habit: HabitItem, on date: Date) -> String {
+        let key = HabitDate.key(for: date)
+        if let override = state.dailyOverrides[key]?[habit.id] {
             return override
         }
 
-        let selected = HabitDate.date(from: dateKey)
+        let selected = HabitDate.date(from: key)
         let effective = habit.titleHistory
             .sorted { $0.key < $1.key }
             .last(where: { HabitDate.date(from: $0.key) <= selected })
@@ -142,6 +201,11 @@ final class HabitViewModel: ObservableObject {
 
     func shiftWeek(by offset: Int) {
         let next = Calendar.current.date(byAdding: .day, value: offset * 7, to: selectedDate) ?? selectedDate
+        select(date: next)
+    }
+
+    func shiftMonth(by offset: Int) {
+        let next = Calendar.current.date(byAdding: .month, value: offset, to: selectedDate) ?? selectedDate
         select(date: next)
     }
 
@@ -189,6 +253,13 @@ final class HabitViewModel: ObservableObject {
     func toggleDisplayMode() {
         var next = state
         next.uiPreferences.displayMode = displayMode == .normal ? .compact : .normal
+        state = next
+        persist()
+    }
+
+    func setTheme(_ theme: AppTheme) {
+        var next = state
+        next.uiPreferences.theme = theme
         state = next
         persist()
     }

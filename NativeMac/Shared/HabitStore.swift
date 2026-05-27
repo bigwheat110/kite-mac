@@ -4,6 +4,9 @@ final class HabitStore {
     static let shared = HabitStore()
 
     static let fileName = "app-state.json"
+    static let uiTestFileName = "app-state-uitest.json"
+    static let appDirectoryName = "KiteNative"
+    static let uiTestDirectoryName = "KiteNativeUITests"
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -41,13 +44,17 @@ final class HabitStore {
     }
 
     private func storageURL() -> URL? {
+        let isUITest = ProcessInfo.processInfo.arguments.contains("--uitest-reset-state")
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first
 
         return appSupport?
-            .appendingPathComponent("KiteNative", isDirectory: true)
-            .appendingPathComponent(Self.fileName)
+            .appendingPathComponent(
+                isUITest ? Self.uiTestDirectoryName : Self.appDirectoryName,
+                isDirectory: true
+            )
+            .appendingPathComponent(isUITest ? Self.uiTestFileName : Self.fileName)
     }
 }

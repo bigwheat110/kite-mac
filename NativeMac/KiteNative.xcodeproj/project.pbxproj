@@ -10,6 +10,7 @@
 		0F024C176EC93F1C0031A701 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57933153ADC4CDB5B5F895D /* AppDelegate.swift */; };
 		1F5C2792EBD8584A8B4ACB50 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73BB88B56D12AC693E47FC4D /* SettingsView.swift */; };
 		24AA96102335B642E7C94195 /* HabitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B7D2C2968251F2693F28C5 /* HabitStore.swift */; };
+		43395F0BD0FD080E5B999DF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ADF13AC80CC880FBAE60024 /* Assets.xcassets */; };
 		713D9550CCB019244B8D1B94 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
 		7FE35F5C9C4A5824308B2B63 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
 		80CDCCA59F834C48C6E459C9 /* KiteWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -56,7 +57,6 @@
 /* Begin PBXFileReference section */
 		2DD940A3480D729BD6E1F118 /* KiteChecklistWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteChecklistWidget.swift; sourceTree = "<group>"; };
 		2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KiteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		40AF5A74E9F37EF33A26F137 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteNativeApp.swift; sourceTree = "<group>"; };
 		51A9E48949143A7212F97B0C /* ChecklistFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistFlowUITests.swift; sourceTree = "<group>"; };
 		55B7D2C2968251F2693F28C5 /* HabitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitStore.swift; sourceTree = "<group>"; };
@@ -64,6 +64,7 @@
 		73BB88B56D12AC693E47FC4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiteNativeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistView.swift; sourceTree = "<group>"; };
+		9ADF13AC80CC880FBAE60024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A57933153ADC4CDB5B5F895D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		ACD0F6182F2F25B0C0F574F8 /* HabitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitViewModel.swift; sourceTree = "<group>"; };
 		E017CC175D7CB370779861C0 /* KiteNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KiteNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,9 +125,9 @@
 			isa = PBXGroup;
 			children = (
 				A57933153ADC4CDB5B5F895D /* AppDelegate.swift */,
+				9ADF13AC80CC880FBAE60024 /* Assets.xcassets */,
 				8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */,
 				ACD0F6182F2F25B0C0F574F8 /* HabitViewModel.swift */,
-				40AF5A74E9F37EF33A26F137 /* Info.plist */,
 				43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */,
 				73BB88B56D12AC693E47FC4D /* SettingsView.swift */,
 			);
@@ -158,6 +159,7 @@
 			buildConfigurationList = 119E1C628CE498F05C13E3B7 /* Build configuration list for PBXNativeTarget "KiteNative" */;
 			buildPhases = (
 				B100F885C0205B5408608738 /* Sources */,
+				C2C91EBD68AEB6930A932C1B /* Resources */,
 				411DB3A8857253E5BFF6C358 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -234,6 +236,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C2C91EBD68AEB6930A932C1B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				43395F0BD0FD080E5B999DF7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		03986DC1A079191B5A64B4CA /* Sources */ = {

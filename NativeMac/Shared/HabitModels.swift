@@ -95,14 +95,30 @@ enum DisplayMode: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum AppTheme: String, Codable, CaseIterable, Identifiable {
+    case dark
+    case light
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .dark: return "深色"
+        case .light: return "浅色"
+        }
+    }
+}
+
 struct UIPreferences: Codable {
     var displayMode: DisplayMode
+    var theme: AppTheme
     var alwaysOnTop: Bool
     var focusModeEnabled: Bool
     var lastSelectedDateKey: String
 
     static let `default` = UIPreferences(
         displayMode: .normal,
+        theme: .dark,
         alwaysOnTop: true,
         focusModeEnabled: false,
         lastSelectedDateKey: HabitDate.key(for: .now)
@@ -208,5 +224,30 @@ enum HabitDate {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "M月d日 EEEE"
         return formatter.string(from: date)
+    }
+
+    static func monthTitle(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy年M月"
+        return formatter.string(from: date)
+    }
+
+    static func startOfMonth(for date: Date) -> Date {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        return calendar.date(from: components) ?? startOfDay(date)
+    }
+
+    static func monthDates(containing date: Date) -> [Date] {
+        let monthStart = startOfMonth(for: date)
+        let firstWeekday = calendar.component(.weekday, from: monthStart)
+        let gridStart = calendar.date(byAdding: .day, value: -(firstWeekday - 1), to: monthStart) ?? monthStart
+        return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: gridStart) }
+    }
+
+    static func isInSameMonth(_ lhs: Date, as rhs: Date) -> Bool {
+        let lhsParts = calendar.dateComponents([.year, .month], from: lhs)
+        let rhsParts = calendar.dateComponents([.year, .month], from: rhs)
+        return lhsParts.year == rhsParts.year && lhsParts.month == rhsParts.month
     }
 }
