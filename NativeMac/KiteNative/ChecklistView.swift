@@ -187,14 +187,14 @@ private struct HabitListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(store.habits) { habit in
+            ForEach(store.orderedHabits) { habit in
                 HStack(spacing: 14) {
                     Button {
                         store.toggle(habit)
                     } label: {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(Color.white.opacity(0.92), lineWidth: 1.8)
-                            .fill(store.isDone(habit) ? Color.clear : Color.clear)
+                            .fill(store.isDone(habit) ? Color(red: 0.19, green: 0.83, blue: 0.42).opacity(0.18) : Color.clear)
                             .frame(width: 28, height: 28)
                             .overlay {
                                 if store.isDone(habit) {
@@ -228,8 +228,8 @@ private struct HabitListView: View {
                     } else {
                         Text(store.title(for: habit))
                             .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white)
-                            .strikethrough(store.isDone(habit), color: .white.opacity(0.4))
+                            .foregroundStyle(store.isDone(habit) ? Color.white.opacity(0.48) : .white)
+                            .strikethrough(store.isDone(habit), color: .white.opacity(0.82))
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
@@ -242,6 +242,7 @@ private struct HabitListView: View {
                 }
                 .padding(.horizontal, 22)
                 .frame(height: 54)
+                .opacity(store.isDone(habit) ? 0.82 : 1)
                 .contentShape(Rectangle())
                 .contextMenu {
                     Button {
@@ -421,7 +422,7 @@ private struct ReminderEditorView: View {
 
                 Picker("关联事项", selection: $store.reminderDraft.linkedHabitId) {
                     Text("无").tag(UUID?.none)
-                    ForEach(store.habits) { habit in
+                    ForEach(store.orderedHabits) { habit in
                         Text(habit.title).tag(Optional(habit.id))
                     }
                 }

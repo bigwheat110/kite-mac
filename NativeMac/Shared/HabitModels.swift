@@ -4,17 +4,20 @@ struct HabitItem: Codable, Hashable, Identifiable {
     let id: UUID
     var title: String
     var createdAt: Date
+    var baseTitle: String
     var titleHistory: [String: String]
 
     init(
         id: UUID = UUID(),
         title: String,
         createdAt: Date = .now,
+        baseTitle: String? = nil,
         titleHistory: [String: String] = [:]
     ) {
         self.id = id
         self.title = title
         self.createdAt = createdAt
+        self.baseTitle = baseTitle ?? title
         self.titleHistory = titleHistory
     }
 }

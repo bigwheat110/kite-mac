@@ -42,7 +42,7 @@ final class HabitViewModel: ObservableObject {
 
     init() {
         let loaded = HabitStore.shared.load()
-        state = loaded
+        state = Self.normalize(loaded)
         selectedDate = HabitDate.date(from: loaded.uiPreferences.lastSelectedDateKey)
     }
 
@@ -52,6 +52,17 @@ final class HabitViewModel: ObservableObject {
     var isAlwaysOnTop: Bool { state.uiPreferences.alwaysOnTop }
     var displayMode: DisplayMode { state.uiPreferences.displayMode }
     var dateKey: String { HabitDate.key(for: selectedDate) }
+    var orderedHabits: [HabitItem] {
+        let orderMap = Dictionary(uniqueKeysWithValues: state.habits.enumerated().map { ($1.id, $0) })
+        return habits.sorted { lhs, rhs in
+            let lhsDone = isDone(lhs)
+            let rhsDone = isDone(rhs)
+            if lhsDone != rhsDone {
+                return !lhsDone && rhsDone
+            }
+            return (orderMap[lhs.id] ?? 0) < (orderMap[rhs.id] ?? 0)
+        }
+    }
 
     var doneCount: Int {
         habits.filter { isDone($0) }.count
@@ -106,7 +117,7 @@ final class HabitViewModel: ObservableObject {
             .sorted { $0.key < $1.key }
             .last(where: { HabitDate.date(from: $0.key) <= selected })
 
-        return effective?.value ?? habit.title
+        return effective?.value ?? habit.baseTitle
     }
 
     func isDone(_ habit: HabitItem) -> Bool {
@@ -213,8 +224,12 @@ final class HabitViewModel: ObservableObject {
             statusMessage = "仅今天已改名"
         case .templateFromToday:
             if let index = state.habits.firstIndex(where: { $0.id == habit.id }) {
+                let oldTitle = title(for: state.habits[index])
                 state.habits[index].title = trimmed
                 state.habits[index].titleHistory[dateKey] = trimmed
+                if state.habits[index].baseTitle.isEmpty {
+                    state.habits[index].baseTitle = oldTitle
+                }
                 state.dailyOverrides[dateKey]?[habit.id] = nil
                 statusMessage = "模板名已更新，今天及以后生效"
             }
@@ -343,4 +358,17 @@ final class HabitViewModel: ObservableObject {
     private func persist() {
         HabitStore.shared.save(state)
     }
+
+    private static func normalize(_ state: AppState) -> AppState {
+        var normalized = state
+        normalized.habits = normalized.habits.map { habit in
+            var updated = habit
+            if updated.baseTitle.isEmpty {
+                updated.baseTitle = updated.title
+            }
+            return updated
+        }
+        return normalized
+    }
 }
+
