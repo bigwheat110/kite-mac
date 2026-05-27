@@ -183,6 +183,7 @@ private struct WeekStripView: View {
 
 private struct HabitListView: View {
     @EnvironmentObject private var store: HabitViewModel
+    @FocusState private var focusedHabitId: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -205,11 +206,17 @@ private struct HabitListView: View {
                     }
                     .buttonStyle(.plain)
 
-                    if store.editingHabitId == habit.id && store.editingMode == .todayOnly {
+                    if store.editingHabitId == habit.id {
                         TextField("", text: $store.editingHabitText)
                             .textFieldStyle(.plain)
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white)
+                            .focused($focusedHabitId, equals: habit.id)
+                            .onAppear {
+                                DispatchQueue.main.async {
+                                    focusedHabitId = habit.id
+                                }
+                            }
                             .onSubmit {
                                 store.saveHabitEdit()
                             }
@@ -227,7 +234,9 @@ private struct HabitListView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                store.beginEdit(habit, mode: .todayOnly)
+                                if store.editingHabitId != habit.id {
+                                    store.beginEdit(habit, mode: .todayOnly)
+                                }
                             }
                     }
                 }

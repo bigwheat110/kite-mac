@@ -7,5 +7,8 @@
   2. quit any running `KiteNative` instance
   3. relaunch the latest built `KiteNative` app
   4. bring `KiteNative` to the foreground
+  5. commit the current changes with a clear message
+  6. push the commit to the GitHub remote `origin`
 
 - Do not stop after only editing files or only building. The expected workflow is edit -> build -> restart app -> foreground app.
+- Do not leave local-only changes behind after a completed edit cycle when the repository is in a healthy pushable state.
