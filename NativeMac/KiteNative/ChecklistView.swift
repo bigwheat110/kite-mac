@@ -190,92 +190,22 @@ private struct WeekStripView: View {
 
 private struct HabitListView: View {
     @EnvironmentObject private var store: HabitViewModel
-    @FocusState private var focusedHabitId: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(store.orderedHabits) { habit in
-                HStack(spacing: 14) {
-                    Button {
-                        store.toggle(habit)
-                    } label: {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.92), lineWidth: 1.8)
-                            .fill(store.isDone(habit) ? Color(red: 0.19, green: 0.83, blue: 0.42).opacity(0.18) : Color.clear)
-                            .frame(width: 28, height: 28)
-                            .overlay {
-                                if store.isDone(habit) {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(Color(red: 0.19, green: 0.83, blue: 0.42))
-                                        .padding(4)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("habit-toggle-\(habit.id.uuidString)")
+            habitSection(for: store.pendingHabits)
 
-                    if store.editingHabitId == habit.id {
-                        TextField("", text: $store.editingHabitText)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white)
-                            .focused($focusedHabitId, equals: habit.id)
-                            .accessibilityIdentifier("habit-editor-\(habit.id.uuidString)")
-                            .onAppear {
-                                DispatchQueue.main.async {
-                                    focusedHabitId = habit.id
-                                }
-                            }
-                            .onSubmit {
-                                store.saveHabitEdit()
-                            }
-                            .onDisappear {
-                                if store.editingHabitId == habit.id {
-                                    store.saveHabitEdit()
-                                }
-                            }
-                    } else {
-                        Text(store.title(for: habit))
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(store.isDone(habit) ? Color.white.opacity(0.48) : .white)
-                            .strikethrough(store.isDone(habit), color: .white.opacity(0.82))
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                            .accessibilityIdentifier("habit-title-\(habit.id.uuidString)")
-                            .onTapGesture {
-                                if store.editingHabitId != habit.id {
-                                    store.beginEdit(habit, mode: .todayOnly)
-                                }
-                            }
-                    }
-                }
-                .padding(.horizontal, 22)
-                .frame(height: 54)
-                .opacity(store.isDone(habit) ? 0.82 : 1)
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("habit-row-\(habit.id.uuidString)")
-                .contextMenu {
-                    Button {
-                        store.beginEdit(habit, mode: .templateFromToday)
-                    } label: {
-                        Label("修改模板名（今天及以后）", systemImage: "calendar.badge.plus")
-                    }
-
-                    Button(role: .destructive) {
-                        store.removeHabit(habit)
-                    } label: {
-                        Label("删除", systemImage: "trash")
-                    }
-                }
-
-                if habit.id != store.habits.last?.id {
-                    Divider()
-                        .overlay(Color.white.opacity(0.05))
-                        .padding(.horizontal, 18)
-                }
+            if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
+                Divider()
+                    .overlay(Color.white.opacity(0.08))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 4)
             }
+
+            habitSection(for: store.completedHabits)
         }
+        .animation(.easeInOut(duration: 0.18), value: store.orderedHabits.map(\.id))
+        .animation(.easeInOut(duration: 0.18), value: store.doneCount)
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -285,6 +215,129 @@ private struct HabitListView: View {
                         .fill(Color(red: 0.02, green: 0.04, blue: 0.08))
                 )
         )
+    }
+
+    @ViewBuilder
+    private func habitSection(for habits: [HabitItem]) -> some View {
+        ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
+            HabitRowView(habit: habit, isLast: index == habits.count - 1)
+                .environmentObject(store)
+        }
+    }
+}
+
+private struct HabitRowView: View {
+    @EnvironmentObject private var store: HabitViewModel
+    @FocusState private var isEditorFocused: Bool
+
+    let habit: HabitItem
+    let isLast: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Button {
+                store.toggle(habit)
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(store.isDone(habit) ? Color(red: 0.19, green: 0.83, blue: 0.42) : Color.clear)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(
+                                    store.isDone(habit)
+                                        ? Color(red: 0.19, green: 0.83, blue: 0.42)
+                                        : Color.white.opacity(0.92),
+                                    lineWidth: 1.8
+                                )
+                        }
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .opacity(store.isDone(habit) ? 1 : 0)
+                }
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(store.isDone(habit) ? "标记未完成" : "标记完成")
+            .accessibilityIdentifier("habit-toggle-\(habit.id.uuidString)")
+
+            if store.editingHabitId == habit.id {
+                TextField("", text: $store.editingHabitText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white)
+                    .focused($isEditorFocused)
+                    .accessibilityIdentifier("habit-editor-\(habit.id.uuidString)")
+                    .onAppear {
+                        DispatchQueue.main.async {
+                            isEditorFocused = true
+                        }
+                    }
+                    .onSubmit {
+                        store.saveHabitEdit()
+                    }
+                    .onDisappear {
+                        if store.editingHabitId == habit.id {
+                            store.saveHabitEdit()
+                        }
+                    }
+            } else {
+                Button {
+                    if store.editingHabitId != habit.id {
+                        store.beginEdit(habit, mode: .todayOnly)
+                    }
+                } label: {
+                    Text(store.title(for: habit))
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(store.isDone(habit) ? Color.white.opacity(0.48) : .white)
+                        .strikethrough(store.isDone(habit), color: .white.opacity(0.82))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(store.title(for: habit))
+                .accessibilityIdentifier("habit-title-\(habit.id.uuidString)")
+            }
+        }
+        .padding(.horizontal, 22)
+        .frame(height: 54)
+        .background(store.isDone(habit) ? Color.white.opacity(0.025) : Color.clear)
+        .opacity(store.isDone(habit) ? 0.82 : 1)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("habit-row-\(habit.id.uuidString)")
+        .contextMenu {
+            Button {
+                if store.editingHabitId != habit.id {
+                    store.beginEdit(habit, mode: .todayOnly)
+                }
+            } label: {
+                Label("仅修改今天", systemImage: "pencil")
+            }
+
+            Button {
+                store.beginEdit(habit, mode: .templateFromToday)
+            } label: {
+                Label("修改模板名（从这一天起）", systemImage: "calendar.badge.plus")
+            }
+
+            Button(role: .destructive) {
+                store.removeHabit(habit)
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+        }
+
+        if !isLast {
+            Divider()
+                .overlay(Color.white.opacity(0.05))
+                .padding(.horizontal, 18)
+        }
     }
 }
 

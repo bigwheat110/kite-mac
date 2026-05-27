@@ -2,6 +2,19 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.main.async {
+            self.configurePrimaryWindow()
+        }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            configurePrimaryWindow()
+        }
+        return true
+    }
+
+    private func configurePrimaryWindow() {
         guard let window = NSApplication.shared.windows.first else { return }
         let targetSize = NSSize(width: 575, height: 760)
         window.setContentSize(targetSize)
@@ -17,5 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.collectionBehavior = [.moveToActiveSpace]
         window.standardWindowButton(.zoomButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = false
+        window.orderFrontRegardless()
+        window.makeKeyAndOrderFront(nil)
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 }

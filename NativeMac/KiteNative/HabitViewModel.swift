@@ -64,6 +64,14 @@ final class HabitViewModel: ObservableObject {
         }
     }
 
+    var pendingHabits: [HabitItem] {
+        orderedHabits.filter { !isDone($0) }
+    }
+
+    var completedHabits: [HabitItem] {
+        orderedHabits.filter { isDone($0) }
+    }
+
     var doneCount: Int {
         habits.filter { isDone($0) }.count
     }
@@ -245,7 +253,7 @@ final class HabitViewModel: ObservableObject {
                     next.habits[index].baseTitle = oldTitle
                 }
                 next.dailyOverrides[dateKey]?[habit.id] = nil
-                statusMessage = "模板名已更新，今天及以后生效"
+                statusMessage = "模板名已更新，从这一天起生效"
             }
         }
 
@@ -394,4 +402,3 @@ final class HabitViewModel: ObservableObject {
         return normalized
     }
 }
-

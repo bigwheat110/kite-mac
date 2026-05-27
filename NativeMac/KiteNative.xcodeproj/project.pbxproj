@@ -288,7 +288,7 @@
 		117F37E3CCF57A07C0D75108 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
+				BUNDLE_LOADER = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -299,6 +299,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.uitests;
 				PRODUCT_NAME = KiteNativeUITests;
 				SDKROOT = macosx;
+				TEST_HOST = "";
 				TEST_TARGET_NAME = KiteNative;
 			};
 			name = Release;
@@ -306,7 +307,7 @@
 		42E30F81181212A5C9E0B11C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
+				BUNDLE_LOADER = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -317,6 +318,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.uitests;
 				PRODUCT_NAME = KiteNativeUITests;
 				SDKROOT = macosx;
+				TEST_HOST = "";
 				TEST_TARGET_NAME = KiteNative;
 			};
 			name = Debug;
@@ -354,8 +356,6 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -475,8 +475,6 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";

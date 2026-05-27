@@ -9,8 +9,6 @@ settings:
     SWIFT_VERSION: 5.0
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    CODE_SIGNING_ALLOWED: NO
-    CODE_SIGNING_REQUIRED: NO
 targets:
   KiteNative:
     type: application
@@ -43,6 +41,8 @@ targets:
         PRODUCT_NAME: KiteNativeUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: KiteNative
+        BUNDLE_LOADER: ""
+        TEST_HOST: ""
   KiteWidgetExtension:
     type: app-extension
     platform: macOS
