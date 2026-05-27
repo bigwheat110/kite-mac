@@ -97,7 +97,16 @@ final class HabitViewModel: ObservableObject {
     }
 
     func title(for habit: HabitItem) -> String {
-        state.dailyOverrides[dateKey]?[habit.id] ?? habit.title
+        if let override = state.dailyOverrides[dateKey]?[habit.id] {
+            return override
+        }
+
+        let selected = HabitDate.date(from: dateKey)
+        let effective = habit.titleHistory
+            .sorted { $0.key < $1.key }
+            .last(where: { HabitDate.date(from: $0.key) <= selected })
+
+        return effective?.value ?? habit.title
     }
 
     func isDone(_ habit: HabitItem) -> Bool {
@@ -205,6 +214,7 @@ final class HabitViewModel: ObservableObject {
         case .templateFromToday:
             if let index = state.habits.firstIndex(where: { $0.id == habit.id }) {
                 state.habits[index].title = trimmed
+                state.habits[index].titleHistory[dateKey] = trimmed
                 state.dailyOverrides[dateKey]?[habit.id] = nil
                 statusMessage = "模板名已更新，今天及以后生效"
             }
