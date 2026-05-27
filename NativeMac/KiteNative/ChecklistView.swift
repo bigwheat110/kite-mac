@@ -42,10 +42,6 @@ struct ChecklistView: View {
             ReminderEditorView()
                 .environmentObject(store)
         }
-        .sheet(item: $store.editingHabit) { _ in
-            HabitEditSheet()
-                .environmentObject(store)
-        }
         .overlay(alignment: .bottom) {
             if let status = store.statusMessage {
                 Text(status)
@@ -209,27 +205,40 @@ private struct HabitListView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text(store.title(for: habit))
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(.white)
-                        .strikethrough(store.isDone(habit), color: .white.opacity(0.4))
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if store.editingHabitId == habit.id && store.editingMode == .todayOnly {
+                        TextField("", text: $store.editingHabitText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white)
+                            .onSubmit {
+                                store.saveHabitEdit()
+                            }
+                            .onDisappear {
+                                if store.editingHabitId == habit.id {
+                                    store.saveHabitEdit()
+                                }
+                            }
+                    } else {
+                        Text(store.title(for: habit))
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white)
+                            .strikethrough(store.isDone(habit), color: .white.opacity(0.4))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                store.beginEdit(habit, mode: .todayOnly)
+                            }
+                    }
                 }
                 .padding(.horizontal, 22)
                 .frame(height: 54)
                 .contentShape(Rectangle())
                 .contextMenu {
                     Button {
-                        store.beginEdit(habit, mode: .todayOnly)
+                        store.beginEdit(habit, mode: .templateFromToday)
                     } label: {
-                        Label("只改今天", systemImage: "pencil")
-                    }
-
-                    Button {
-                        store.beginEdit(habit, mode: .templateFromTomorrow)
-                    } label: {
-                        Label("设为模板名（明天生效）", systemImage: "calendar.badge.plus")
+                        Label("修改模板名（今天及以后）", systemImage: "calendar.badge.plus")
                     }
 
                     Button(role: .destructive) {
@@ -423,43 +432,6 @@ private struct ReminderEditorView: View {
             }
         }
         .frame(minWidth: 420, minHeight: 260)
-    }
-}
-
-private struct HabitEditSheet: View {
-    @EnvironmentObject private var store: HabitViewModel
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("修改方式") {
-                    Picker("模式", selection: $store.editingMode) {
-                        Text("只改今天").tag(HabitEditMode.todayOnly)
-                        Text("设为模板名（明天生效）").tag(HabitEditMode.templateFromTomorrow)
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                Section("事项名称") {
-                    TextField("输入新的事项名称", text: $store.editingHabitText)
-                }
-            }
-            .navigationTitle("修改事项")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        store.editingHabit = nil
-                        store.editingHabitText = ""
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        store.saveHabitEdit()
-                    }
-                }
-            }
-        }
-        .frame(minWidth: 420, minHeight: 220)
     }
 }
 

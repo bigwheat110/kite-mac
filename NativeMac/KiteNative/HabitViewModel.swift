@@ -24,7 +24,7 @@ struct ReminderDraft {
 
 enum HabitEditMode: String {
     case todayOnly
-    case templateFromTomorrow
+    case templateFromToday
 }
 
 @MainActor
@@ -36,7 +36,7 @@ final class HabitViewModel: ObservableObject {
     @Published var showingReminderEditor = false
     @Published var reminderDraft = ReminderDraft()
     @Published var statusMessage: String?
-    @Published var editingHabit: HabitItem?
+    @Published var editingHabitId: UUID?
     @Published var editingHabitText = ""
     @Published var editingMode: HabitEditMode = .todayOnly
 
@@ -176,15 +176,25 @@ final class HabitViewModel: ObservableObject {
     }
 
     func beginEdit(_ habit: HabitItem, mode: HabitEditMode) {
-        editingHabit = habit
+        editingHabitId = habit.id
         editingMode = mode
         editingHabitText = mode == .todayOnly ? title(for: habit) : habit.title
     }
 
+    func cancelEdit() {
+        editingHabitId = nil
+        editingHabitText = ""
+    }
+
     func saveHabitEdit() {
-        guard let habit = editingHabit else { return }
+        guard let habitId = editingHabitId,
+              let habit = state.habits.first(where: { $0.id == habitId })
+        else { return }
         let trimmed = editingHabitText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            cancelEdit()
+            return
+        }
 
         switch editingMode {
         case .todayOnly:
@@ -192,15 +202,15 @@ final class HabitViewModel: ObservableObject {
             overrides[habit.id] = trimmed
             state.dailyOverrides[dateKey] = overrides
             statusMessage = "仅今天已改名"
-        case .templateFromTomorrow:
+        case .templateFromToday:
             if let index = state.habits.firstIndex(where: { $0.id == habit.id }) {
                 state.habits[index].title = trimmed
-                statusMessage = "模板名已更新，明天生效"
+                state.dailyOverrides[dateKey]?[habit.id] = nil
+                statusMessage = "模板名已更新，今天及以后生效"
             }
         }
 
-        editingHabit = nil
-        editingHabitText = ""
+        cancelEdit()
         persist()
     }
 
