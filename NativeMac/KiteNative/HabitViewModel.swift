@@ -126,7 +126,9 @@ final class HabitViewModel: ObservableObject {
 
     func select(date: Date) {
         selectedDate = HabitDate.startOfDay(date)
-        state.uiPreferences.lastSelectedDateKey = HabitDate.key(for: selectedDate)
+        var next = state
+        next.uiPreferences.lastSelectedDateKey = HabitDate.key(for: selectedDate)
+        state = next
         persist()
     }
 
@@ -140,45 +142,55 @@ final class HabitViewModel: ObservableObject {
     }
 
     func toggle(_ habit: HabitItem) {
-        var day = state.entries[dateKey] ?? [:]
+        var next = state
+        var day = next.entries[dateKey] ?? [:]
         day[habit.id] = !(day[habit.id] ?? false)
-        state.entries[dateKey] = day
+        next.entries[dateKey] = day
+        state = next
         persist()
     }
 
     func addHabit() {
         let trimmed = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        state.habits.append(HabitItem(title: trimmed))
+        var next = state
+        next.habits.append(HabitItem(title: trimmed))
+        state = next
         draftTitle = ""
         persist()
     }
 
     func removeHabit(_ habit: HabitItem) {
-        state.habits.removeAll { $0.id == habit.id }
-        for key in state.entries.keys {
-            state.entries[key]?[habit.id] = nil
-            state.dailyOverrides[key]?[habit.id] = nil
+        var next = state
+        next.habits.removeAll { $0.id == habit.id }
+        for key in next.entries.keys {
+            next.entries[key]?[habit.id] = nil
+            next.dailyOverrides[key]?[habit.id] = nil
         }
-        state.reminders = state.reminders.map { reminder in
+        next.reminders = next.reminders.map { reminder in
             var updated = reminder
             if updated.linkedHabitId == habit.id {
                 updated.linkedHabitId = nil
             }
             return updated
         }
+        state = next
         persist()
     }
 
     func toggleDisplayMode() {
-        state.uiPreferences.displayMode = displayMode == .normal ? .compact : .normal
+        var next = state
+        next.uiPreferences.displayMode = displayMode == .normal ? .compact : .normal
+        state = next
         persist()
     }
 
     func toggleFocusMode() {
-        state.uiPreferences.focusModeEnabled.toggle()
-        state.focusSession.active = state.uiPreferences.focusModeEnabled
-        state.focusSession.startedAt = state.uiPreferences.focusModeEnabled ? .now : nil
+        var next = state
+        next.uiPreferences.focusModeEnabled.toggle()
+        next.focusSession.active = next.uiPreferences.focusModeEnabled
+        next.focusSession.startedAt = next.uiPreferences.focusModeEnabled ? .now : nil
+        state = next
         persist()
     }
 
@@ -216,25 +228,28 @@ final class HabitViewModel: ObservableObject {
             return
         }
 
+        var next = state
+
         switch editingMode {
         case .todayOnly:
-            var overrides = state.dailyOverrides[dateKey] ?? [:]
+            var overrides = next.dailyOverrides[dateKey] ?? [:]
             overrides[habit.id] = trimmed
-            state.dailyOverrides[dateKey] = overrides
+            next.dailyOverrides[dateKey] = overrides
             statusMessage = "仅今天已改名"
         case .templateFromToday:
-            if let index = state.habits.firstIndex(where: { $0.id == habit.id }) {
-                let oldTitle = title(for: state.habits[index])
-                state.habits[index].title = trimmed
-                state.habits[index].titleHistory[dateKey] = trimmed
-                if state.habits[index].baseTitle.isEmpty {
-                    state.habits[index].baseTitle = oldTitle
+            if let index = next.habits.firstIndex(where: { $0.id == habit.id }) {
+                let oldTitle = title(for: next.habits[index])
+                next.habits[index].title = trimmed
+                next.habits[index].titleHistory[dateKey] = trimmed
+                if next.habits[index].baseTitle.isEmpty {
+                    next.habits[index].baseTitle = oldTitle
                 }
-                state.dailyOverrides[dateKey]?[habit.id] = nil
+                next.dailyOverrides[dateKey]?[habit.id] = nil
                 statusMessage = "模板名已更新，今天及以后生效"
             }
         }
 
+        state = next
         cancelEdit()
         persist()
     }
@@ -250,22 +265,28 @@ final class HabitViewModel: ObservableObject {
             repeatMode: reminderDraft.repeatMode,
             linkedHabitId: reminderDraft.linkedHabitId
         )
-        state.reminders.append(reminder)
+        var next = state
+        next.reminders.append(reminder)
+        state = next
         persist()
         showingReminderEditor = false
         Task { await scheduleReminder(reminder) }
     }
 
     func removeReminder(_ reminder: ReminderItem) {
-        state.reminders.removeAll { $0.id == reminder.id }
+        var next = state
+        next.reminders.removeAll { $0.id == reminder.id }
+        state = next
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [reminder.id.uuidString])
         persist()
     }
 
     func toggleReminder(_ reminder: ReminderItem) {
-        guard let index = state.reminders.firstIndex(where: { $0.id == reminder.id }) else { return }
-        state.reminders[index].enabled.toggle()
-        let updated = state.reminders[index]
+        var next = state
+        guard let index = next.reminders.firstIndex(where: { $0.id == reminder.id }) else { return }
+        next.reminders[index].enabled.toggle()
+        let updated = next.reminders[index]
+        state = next
         persist()
 
         if updated.enabled {
@@ -276,7 +297,9 @@ final class HabitViewModel: ObservableObject {
     }
 
     func toggleAlwaysOnTop() {
-        state.uiPreferences.alwaysOnTop.toggle()
+        var next = state
+        next.uiPreferences.alwaysOnTop.toggle()
+        state = next
         applyWindowPreferences()
         persist()
     }

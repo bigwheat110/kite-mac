@@ -25,8 +25,24 @@ targets:
         PRODUCT_NAME: KiteNative
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme:
+      testTargets:
+        - KiteNativeUITests
     dependencies:
       - target: KiteWidgetExtension
+  KiteNativeUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: KiteNativeUITests
+    dependencies:
+      - target: KiteNative
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kitemac.uitests
+        PRODUCT_NAME: KiteNativeUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: KiteNative
   KiteWidgetExtension:
     type: app-extension
     platform: macOS

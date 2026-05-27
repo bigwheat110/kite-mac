@@ -68,6 +68,7 @@ private struct HeaderBarView: View {
                 Text("Kite 待办")
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(Color(red: 0.63, green: 0.69, blue: 0.81))
+                    .accessibilityIdentifier("app-title")
             }
 
             Spacer()
@@ -98,11 +99,13 @@ private struct ActionButtonsView: View {
                 actionCard(title: store.focusButtonTitle)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("focus-button")
 
             Button(action: store.openReminders) {
                 actionCard(title: "添加提醒")
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("reminder-button")
 
             ZStack {
                 Circle()
@@ -135,6 +138,7 @@ private struct WeekStripView: View {
                     .frame(width: 32, height: 68)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("week-prev-button")
 
             HStack(spacing: 8) {
                 ForEach(store.weekItems) { item in
@@ -165,6 +169,7 @@ private struct WeekStripView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("week-day-\(item.id)")
                 }
             }
             .padding(.horizontal, 6)
@@ -176,8 +181,10 @@ private struct WeekStripView: View {
                     .frame(width: 32, height: 68)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("week-next-button")
         }
         .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityIdentifier("week-strip")
     }
 }
 
@@ -205,6 +212,7 @@ private struct HabitListView: View {
                             }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("habit-toggle-\(habit.id.uuidString)")
 
                     if store.editingHabitId == habit.id {
                         TextField("", text: $store.editingHabitText)
@@ -212,6 +220,7 @@ private struct HabitListView: View {
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white)
                             .focused($focusedHabitId, equals: habit.id)
+                            .accessibilityIdentifier("habit-editor-\(habit.id.uuidString)")
                             .onAppear {
                                 DispatchQueue.main.async {
                                     focusedHabitId = habit.id
@@ -233,6 +242,7 @@ private struct HabitListView: View {
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
+                            .accessibilityIdentifier("habit-title-\(habit.id.uuidString)")
                             .onTapGesture {
                                 if store.editingHabitId != habit.id {
                                     store.beginEdit(habit, mode: .todayOnly)
@@ -244,6 +254,7 @@ private struct HabitListView: View {
                 .frame(height: 54)
                 .opacity(store.isDone(habit) ? 0.82 : 1)
                 .contentShape(Rectangle())
+                .accessibilityIdentifier("habit-row-\(habit.id.uuidString)")
                 .contextMenu {
                     Button {
                         store.beginEdit(habit, mode: .templateFromToday)
@@ -289,6 +300,7 @@ private struct AddHabitBarView: View {
                 .padding(.horizontal, 15)
                 .frame(height: 42)
                 .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityIdentifier("add-habit-input")
 
             Button(action: store.addHabit) {
                 Image(systemName: "plus")
@@ -298,6 +310,7 @@ private struct AddHabitBarView: View {
                     .background(Color(red: 0.15, green: 0.19, blue: 0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("add-habit-button")
         }
     }
 }

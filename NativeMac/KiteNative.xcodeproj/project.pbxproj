@@ -15,6 +15,7 @@
 		80CDCCA59F834C48C6E459C9 /* KiteWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		88978D24191858DCF3F1A2A6 /* HabitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B7D2C2968251F2693F28C5 /* HabitStore.swift */; };
 		AB3B9B77CC487B6848A45989 /* KiteChecklistWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD940A3480D729BD6E1F118 /* KiteChecklistWidget.swift */; };
+		ABDDDB7553E2769B9765D33B /* ChecklistFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A9E48949143A7212F97B0C /* ChecklistFlowUITests.swift */; };
 		B8067F14DF4B7FFA4956972D /* ChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */; };
 		C9D89B5F534E5AD115D80F2C /* KiteWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F471ACDBDBC66DBFF1783F75 /* KiteWidgetBundle.swift */; };
 		DA33A9D002E8E5FEA553DB1D /* KiteNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */; };
@@ -22,6 +23,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0AD2D6AB40CF8BA0F22F167F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 69D6A43951B7E4C8459B7BAD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F198D9CD2E7F8F4B832BC5C;
+			remoteInfo = KiteNative;
+		};
 		777F9A36044B9BE188F96FAA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 69D6A43951B7E4C8459B7BAD /* Project object */;
@@ -50,9 +58,11 @@
 		2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KiteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		40AF5A74E9F37EF33A26F137 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteNativeApp.swift; sourceTree = "<group>"; };
+		51A9E48949143A7212F97B0C /* ChecklistFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistFlowUITests.swift; sourceTree = "<group>"; };
 		55B7D2C2968251F2693F28C5 /* HabitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitStore.swift; sourceTree = "<group>"; };
 		6DC696329E2251316C0EBB65 /* HabitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitModels.swift; sourceTree = "<group>"; };
 		73BB88B56D12AC693E47FC4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiteNativeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistView.swift; sourceTree = "<group>"; };
 		A57933153ADC4CDB5B5F895D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		ACD0F6182F2F25B0C0F574F8 /* HabitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitViewModel.swift; sourceTree = "<group>"; };
@@ -66,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				E017CC175D7CB370779861C0 /* KiteNative.app */,
+				7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */,
 				2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */,
 			);
 			name = Products;
@@ -90,10 +101,19 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		424192682BC17117A321C76C /* KiteNativeUITests */ = {
+			isa = PBXGroup;
+			children = (
+				51A9E48949143A7212F97B0C /* ChecklistFlowUITests.swift */,
+			);
+			path = KiteNativeUITests;
+			sourceTree = "<group>";
+		};
 		5CD7B8F4C74825B624A1C86F = {
 			isa = PBXGroup;
 			children = (
 				CF09D24E12B87C4B611AC73E /* KiteNative */,
+				424192682BC17117A321C76C /* KiteNativeUITests */,
 				207A3564D8DE332B9FBF339D /* KiteWidgetExtension */,
 				2E4F874145FD632855FBF3D8 /* Shared */,
 				14EC063FBBB65B314295C3CC /* Products */,
@@ -152,6 +172,24 @@
 			productReference = E017CC175D7CB370779861C0 /* KiteNative.app */;
 			productType = "com.apple.product-type.application";
 		};
+		9ACDCB2AE6B66A117F0F5D2D /* KiteNativeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2F92BB873E9A8C601FA96D08 /* Build configuration list for PBXNativeTarget "KiteNativeUITests" */;
+			buildPhases = (
+				509E7BCD3AD37D9B2DF28F74 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D0F3BDC14B0FC834AF82BD1A /* PBXTargetDependency */,
+			);
+			name = KiteNativeUITests;
+			packageProductDependencies = (
+			);
+			productName = KiteNativeUITests;
+			productReference = 7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -168,6 +206,11 @@
 					6F198D9CD2E7F8F4B832BC5C = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
+					};
+					9ACDCB2AE6B66A117F0F5D2D = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 6F198D9CD2E7F8F4B832BC5C;
 					};
 				};
 			};
@@ -186,6 +229,7 @@
 			projectRoot = "";
 			targets = (
 				6F198D9CD2E7F8F4B832BC5C /* KiteNative */,
+				9ACDCB2AE6B66A117F0F5D2D /* KiteNativeUITests */,
 				0CB9750EDD00293A0427CA59 /* KiteWidgetExtension */,
 			);
 		};
@@ -200,6 +244,14 @@
 				88978D24191858DCF3F1A2A6 /* HabitStore.swift in Sources */,
 				AB3B9B77CC487B6848A45989 /* KiteChecklistWidget.swift in Sources */,
 				C9D89B5F534E5AD115D80F2C /* KiteWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		509E7BCD3AD37D9B2DF28F74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABDDDB7553E2769B9765D33B /* ChecklistFlowUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -225,9 +277,50 @@
 			target = 0CB9750EDD00293A0427CA59 /* KiteWidgetExtension */;
 			targetProxy = 777F9A36044B9BE188F96FAA /* PBXContainerItemProxy */;
 		};
+		D0F3BDC14B0FC834AF82BD1A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F198D9CD2E7F8F4B832BC5C /* KiteNative */;
+			targetProxy = 0AD2D6AB40CF8BA0F22F167F /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		117F37E3CCF57A07C0D75108 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.uitests;
+				PRODUCT_NAME = KiteNativeUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = KiteNative;
+			};
+			name = Release;
+		};
+		42E30F81181212A5C9E0B11C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.uitests;
+				PRODUCT_NAME = KiteNativeUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = KiteNative;
+			};
+			name = Debug;
+		};
 		44C067728DE1126FCB612175 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -437,6 +530,15 @@
 			buildConfigurations = (
 				8AE8CBAA32A3079C1FD1CE74 /* Debug */,
 				579CB961FF3618A9B222225A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2F92BB873E9A8C601FA96D08 /* Build configuration list for PBXNativeTarget "KiteNativeUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42E30F81181212A5C9E0B11C /* Debug */,
+				117F37E3CCF57A07C0D75108 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

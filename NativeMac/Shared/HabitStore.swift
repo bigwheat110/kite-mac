@@ -13,6 +13,10 @@ final class HabitStore {
     }
 
     func load() -> AppState {
+        if ProcessInfo.processInfo.arguments.contains("--uitest-reset-state") {
+            save(.default)
+            return .default
+        }
         guard let url = storageURL(),
               let data = try? Data(contentsOf: url),
               let state = try? decoder.decode(AppState.self, from: data)

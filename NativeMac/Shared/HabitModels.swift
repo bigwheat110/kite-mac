@@ -22,6 +22,18 @@ struct HabitItem: Codable, Hashable, Identifiable {
     }
 }
 
+enum DefaultHabitIDs {
+    static let japanese = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static let hair = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+    static let english = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+    static let footBath = UUID(uuidString: "00000000-0000-0000-0000-000000000004")!
+    static let reading = UUID(uuidString: "00000000-0000-0000-0000-000000000005")!
+    static let exercise = UUID(uuidString: "00000000-0000-0000-0000-000000000006")!
+    static let runAndShopping = UUID(uuidString: "00000000-0000-0000-0000-000000000007")!
+    static let sunshine = UUID(uuidString: "00000000-0000-0000-0000-000000000008")!
+    static let water = UUID(uuidString: "00000000-0000-0000-0000-000000000009")!
+}
+
 enum ReminderRepeatMode: String, Codable, CaseIterable, Identifiable {
     case daily
     case weekdays
@@ -119,15 +131,15 @@ struct AppState: Codable {
 
     static let `default` = AppState(
         habits: [
-            HabitItem(title: "日语"),
-            HabitItem(title: "梳头"),
-            HabitItem(title: "英语"),
-            HabitItem(title: "泡脚"),
-            HabitItem(title: "读书/诗歌"),
-            HabitItem(title: "艾灸/锻炼/跳舞"),
-            HabitItem(title: "跑步/买菜/八段锦"),
-            HabitItem(title: "晒太阳"),
-            HabitItem(title: "喝水")
+            HabitItem(id: DefaultHabitIDs.japanese, title: "日语"),
+            HabitItem(id: DefaultHabitIDs.hair, title: "梳头"),
+            HabitItem(id: DefaultHabitIDs.english, title: "英语"),
+            HabitItem(id: DefaultHabitIDs.footBath, title: "泡脚"),
+            HabitItem(id: DefaultHabitIDs.reading, title: "读书/诗歌"),
+            HabitItem(id: DefaultHabitIDs.exercise, title: "艾灸/锻炼/跳舞"),
+            HabitItem(id: DefaultHabitIDs.runAndShopping, title: "跑步/买菜/八段锦"),
+            HabitItem(id: DefaultHabitIDs.sunshine, title: "晒太阳"),
+            HabitItem(id: DefaultHabitIDs.water, title: "喝水")
         ],
         entries: [:],
         dailyOverrides: [:],
