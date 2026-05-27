@@ -68,11 +68,8 @@ struct ChecklistView: View {
                 if !store.isFocusModeEnabled {
                     ActionButtonsView()
                 }
-                Spacer()
-                    .frame(height: store.displayMode == .compact ? 6 : 12)
                 WeekStripView()
                 HabitListView()
-                    .frame(maxHeight: .infinity)
                 AddHabitBarView()
             }
             .padding(.horizontal, store.displayMode == .compact ? 12 : 18)
@@ -250,56 +247,29 @@ private struct HabitListView: View {
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        VStack(spacing: 12) {
-            ScrollView {
-                VStack(spacing: 0) {
-                    habitSection(for: store.pendingHabits)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(palette.panelStrong)
-                    )
-            )
+        VStack(spacing: 0) {
+            habitSection(for: store.pendingHabits)
 
-            if !store.completedHabits.isEmpty {
-                VStack(spacing: 0) {
-                    HStack {
-                        Text("已完成")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(palette.textSecondary)
-                        Spacer()
-                        Text("\(store.completedHabits.count) 项")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(palette.textSecondary.opacity(0.86))
-                    }
+            if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
+                Divider()
+                    .overlay(Color.white.opacity(0.08))
                     .padding(.horizontal, 18)
-                    .padding(.top, 14)
-                    .padding(.bottom, 8)
-
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            habitSection(for: store.completedHabits)
-                        }
-                    }
-                    .frame(maxHeight: min(CGFloat(store.completedHabits.count) * 54 + 12, 230))
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(palette.panelStrong)
-                        )
-                )
+                    .padding(.vertical, 4)
             }
+
+            habitSection(for: store.completedHabits)
         }
         .animation(.easeInOut(duration: 0.18), value: store.orderedHabits.map(\.id))
         .animation(.easeInOut(duration: 0.18), value: store.doneCount)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(palette.panelStrong)
+                )
+        )
     }
 
     @ViewBuilder
