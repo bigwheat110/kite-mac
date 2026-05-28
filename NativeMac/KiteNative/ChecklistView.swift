@@ -85,6 +85,9 @@ struct ChecklistView: View {
             case .calendar:
                 CalendarPanelView()
                     .environmentObject(store)
+            case .weekPlan:
+                WeekPlanPanelView()
+                    .environmentObject(store)
             case .reminders:
                 RemindersPanelView()
                     .environmentObject(store)
@@ -92,6 +95,10 @@ struct ChecklistView: View {
         }
         .sheet(isPresented: $store.showingReminderEditor) {
             ReminderEditorView()
+                .environmentObject(store)
+        }
+        .sheet(item: $store.repeatDraft) { _ in
+            CustomRepeatEditorView()
                 .environmentObject(store)
         }
         .overlay(alignment: .bottom) {
@@ -129,6 +136,7 @@ private struct HeaderBarView: View {
             HStack(spacing: 11) {
                 IconButton(systemName: "sparkles", action: store.openOverview, symbolSize: 16)
                 IconButton(systemName: "calendar", action: store.openCalendar, symbolSize: 15)
+                IconButton(systemName: "calendar.day.timeline.left", action: store.openWeekPlan, symbolSize: 15)
                 IconButton(systemName: "rectangle.split.3x1", action: store.toggleDisplayMode, symbolSize: 15)
                 IconButton(systemName: "moon", action: store.toggleFocusMode, symbolSize: 15, highlighted: store.isFocusModeEnabled)
                 Divider()
@@ -395,10 +403,44 @@ private struct HabitRowView: View {
                 Label("修改模板名（从这一天起）", systemImage: "calendar.badge.plus")
             }
 
-            Button(role: .destructive) {
-                store.removeHabit(habit)
+            Menu {
+                Button {
+                    store.setRepeatRule(.daily, for: habit)
+                } label: {
+                    Label("每天", systemImage: store.isRepeatRuleSelected(.daily, for: habit) ? "checkmark" : "circle")
+                }
+
+                Button {
+                    store.setRepeatRule(.weekdays, for: habit)
+                } label: {
+                    Label("工作日", systemImage: store.isRepeatRuleSelected(.weekdays, for: habit) ? "checkmark" : "circle")
+                }
+
+                Button {
+                    store.setRepeatRule(.weekends, for: habit)
+                } label: {
+                    Label("周末", systemImage: store.isRepeatRuleSelected(.weekends, for: habit) ? "checkmark" : "circle")
+                }
+
+                Button {
+                    store.beginCustomRepeatEdit(for: habit)
+                } label: {
+                    Label("自定义周几...", systemImage: store.isRepeatRuleSelected(.custom, for: habit) ? "checkmark" : "calendar")
+                }
             } label: {
-                Label("删除", systemImage: "trash")
+                Label("重复规则：\(habit.repeatRule.title)", systemImage: "repeat")
+            }
+
+            Button {
+                store.hideHabitToday(habit)
+            } label: {
+                Label("仅今天隐藏", systemImage: "eye.slash")
+            }
+
+            Button(role: .destructive) {
+                store.removeHabitFromSelectedDate(habit)
+            } label: {
+                Label("从这一天起删除", systemImage: "trash")
             }
         }
 
@@ -625,6 +667,102 @@ private struct CalendarPanelView: View {
     }
 }
 
+private struct WeekPlanPanelView: View {
+    @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("本周安排")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(palette.textPrimary)
+                    Text("按周查看每天会出现的事项。")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
+                }
+
+                Spacer()
+
+                HStack(spacing: 10) {
+                    Button {
+                        store.shiftWeek(by: -1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .buttonStyle(.borderless)
+
+                    Button("本周") {
+                        store.jumpToToday()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        store.shiftWeek(by: 1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+
+            HStack(alignment: .top, spacing: 10) {
+                ForEach(store.weekPlanDays) { day in
+                    VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(day.weekdayTitle)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(palette.textPrimary)
+                            Text(day.dayLabel)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(palette.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Divider()
+                            .overlay(palette.divider)
+
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 8) {
+                                if day.habits.isEmpty {
+                                    Text("无")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(palette.textSecondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                } else {
+                                    ForEach(day.habits) { habit in
+                                        Text(store.title(for: habit, on: day.date))
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(palette.textPrimary)
+                                            .lineLimit(2)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 9)
+                                            .padding(.vertical, 7)
+                                            .background(palette.panelStrong, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, minHeight: 420, alignment: .topLeading)
+                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(palette.divider, lineWidth: 1)
+                    )
+                }
+            }
+        }
+        .padding(24)
+        .background(
+            LinearGradient(colors: [palette.backgroundTop.opacity(0.94), palette.backgroundBottom.opacity(0.94)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+        .frame(minWidth: 1100, minHeight: 620)
+    }
+}
+
 private struct RemindersPanelView: View {
     @EnvironmentObject private var store: HabitViewModel
 
@@ -663,6 +801,91 @@ private struct RemindersPanelView: View {
             }
         }
         .frame(minWidth: 420, minHeight: 360)
+    }
+}
+
+private struct CustomRepeatEditorView: View {
+    @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("自定义周几")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(palette.textPrimary)
+                Text(repeatHabitTitle)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(palette.textSecondary)
+                    .lineLimit(1)
+            }
+
+            HStack(spacing: 10) {
+                ForEach(1...7, id: \.self) { weekday in
+                    Button {
+                        store.toggleRepeatDraftWeekday(weekday)
+                    } label: {
+                        Text(shortWeekdayTitle(for: weekday))
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(isSelected(weekday) ? Color.white : palette.textPrimary)
+                            .frame(width: 48, height: 42)
+                            .background(
+                                isSelected(weekday) ? palette.accentSoft : palette.panel,
+                                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Text("至少选择一天")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(palette.textSecondary)
+
+            HStack {
+                Spacer()
+                Button("取消") {
+                    store.cancelRepeatDraft()
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button("保存") {
+                    store.saveRepeatDraft()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(store.repeatDraft?.weekdays.isEmpty ?? true)
+            }
+        }
+        .padding(24)
+        .background(
+            LinearGradient(colors: [palette.backgroundTop.opacity(0.96), palette.backgroundBottom.opacity(0.96)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+        .frame(width: 480)
+    }
+
+    private var repeatHabitTitle: String {
+        guard let habitId = store.repeatDraft?.habitId,
+              let habit = store.state.habits.first(where: { $0.id == habitId })
+        else { return "" }
+        return store.title(for: habit)
+    }
+
+    private func isSelected(_ weekday: Int) -> Bool {
+        store.repeatDraft?.weekdays.contains(weekday) == true
+    }
+
+    private func shortWeekdayTitle(for weekday: Int) -> String {
+        switch weekday {
+        case 1: return "日"
+        case 2: return "一"
+        case 3: return "二"
+        case 4: return "三"
+        case 5: return "四"
+        case 6: return "五"
+        case 7: return "六"
+        default: return ""
+        }
     }
 }
 

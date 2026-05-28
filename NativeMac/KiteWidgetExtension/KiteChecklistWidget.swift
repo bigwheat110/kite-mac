@@ -84,6 +84,9 @@ struct KiteChecklistWidgetView: View {
 
     private func isActiveToday(_ habit: HabitItem) -> Bool {
         let today = HabitDate.startOfDay(.now)
+        if entry.state.hiddenHabits[todayKey]?.contains(habit.id) == true {
+            return false
+        }
         if let startDateKey = habit.startDateKey,
            HabitDate.date(from: startDateKey) > today {
             return false
@@ -92,6 +95,6 @@ struct KiteChecklistWidgetView: View {
            HabitDate.date(from: endDateKey) < today {
             return false
         }
-        return true
+        return habit.repeatRule.applies(to: today)
     }
 }

@@ -41,9 +41,30 @@ struct ReminderDraft {
     var linkedHabitId: UUID?
 }
 
+struct HabitRepeatDraft: Identifiable {
+    let habitId: UUID
+    var weekdays: [Int]
+
+    var id: UUID { habitId }
+}
+
+struct WeekPlanDay: Identifiable {
+    let date: Date
+    let habits: [HabitItem]
+
+    var id: String { HabitDate.key(for: date) }
+    var weekdayTitle: String { HabitDate.weekdayTitle(date) }
+    var dayLabel: String { HabitDate.dayLabel(date) }
+}
+
 enum HabitEditMode: String {
     case todayOnly
     case templateFromToday
+}
+
+enum HabitDeleteMode: String {
+    case todayOnly
+    case fromSelectedDate
 }
 
 @MainActor
@@ -58,6 +79,7 @@ final class HabitViewModel: ObservableObject {
     @Published var editingHabitId: UUID?
     @Published var editingHabitText = ""
     @Published var editingMode: HabitEditMode = .todayOnly
+    @Published var repeatDraft: HabitRepeatDraft?
 
     init() {
         let loaded = HabitStore.shared.load()
@@ -171,6 +193,12 @@ final class HabitViewModel: ObservableObject {
         "\(reminders.filter(\.enabled).count) 个提醒"
     }
 
+    var weekPlanDays: [WeekPlanDay] {
+        HabitDate.weekDates(containing: selectedDate).map { date in
+            WeekPlanDay(date: date, habits: habits(on: date))
+        }
+    }
+
     func title(for habit: HabitItem) -> String {
         title(for: habit, on: selectedDate)
     }
@@ -267,6 +295,90 @@ final class HabitViewModel: ObservableObject {
         persist()
     }
 
+    func hideHabitToday(_ habit: HabitItem) {
+        var next = state
+        var hidden = next.hiddenHabits[dateKey] ?? []
+        if !hidden.contains(habit.id) {
+            hidden.append(habit.id)
+        }
+        next.hiddenHabits[dateKey] = hidden
+        state = next
+        statusMessage = "仅今天已隐藏"
+        persist()
+    }
+
+    func removeHabitFromSelectedDate(_ habit: HabitItem) {
+        guard let index = state.habits.firstIndex(where: { $0.id == habit.id }) else { return }
+        var next = state
+        let previousDay = HabitDate.calendar.date(byAdding: .day, value: -1, to: HabitDate.startOfDay(selectedDate)) ?? selectedDate
+        next.habits[index].endDateKey = HabitDate.key(for: previousDay)
+        next.hiddenHabits[dateKey]?.removeAll { $0 == habit.id }
+        state = next
+        statusMessage = "已从这一天起删除"
+        persist()
+    }
+
+    func setRepeatRule(_ rule: HabitRepeatRule, for habit: HabitItem) {
+        guard let index = state.habits.firstIndex(where: { $0.id == habit.id }) else { return }
+        var next = state
+        next.habits[index].repeatRule = normalizedRepeatRule(rule)
+        state = next
+        statusMessage = "重复规则已设为\(next.habits[index].repeatRule.title)"
+        persist()
+    }
+
+    func beginCustomRepeatEdit(for habit: HabitItem) {
+        let weekdays: [Int]
+        if habit.repeatRule.kind == .custom {
+            weekdays = habit.repeatRule.weekdays
+        } else {
+            weekdays = [HabitDate.calendar.component(.weekday, from: selectedDate)]
+        }
+        repeatDraft = HabitRepeatDraft(habitId: habit.id, weekdays: Self.normalizedWeekdays(weekdays))
+    }
+
+    func toggleRepeatDraftWeekday(_ weekday: Int) {
+        guard var draft = repeatDraft else { return }
+        if draft.weekdays.contains(weekday) {
+            draft.weekdays.removeAll { $0 == weekday }
+        } else {
+            draft.weekdays.append(weekday)
+        }
+        repeatDraft = draft
+    }
+
+    func saveRepeatDraft() {
+        guard let draft = repeatDraft,
+              let index = state.habits.firstIndex(where: { $0.id == draft.habitId })
+        else { return }
+        let weekdays = Self.normalizedWeekdays(draft.weekdays)
+        guard !weekdays.isEmpty else {
+            statusMessage = "至少选择一天"
+            return
+        }
+        var next = state
+        next.habits[index].repeatRule = .custom(weekdays)
+        state = next
+        repeatDraft = nil
+        statusMessage = "重复规则已设为\(next.habits[index].repeatRule.title)"
+        persist()
+    }
+
+    func cancelRepeatDraft() {
+        repeatDraft = nil
+    }
+
+    func isRepeatRuleSelected(_ kind: HabitRepeatKind, for habit: HabitItem) -> Bool {
+        habit.repeatRule.kind == kind
+    }
+
+    func isCustomWeekdaySelected(_ weekday: Int, for habit: HabitItem) -> Bool {
+        if habit.repeatRule.kind == .custom {
+            return habit.repeatRule.weekdays.contains(weekday)
+        }
+        return weekday == HabitDate.calendar.component(.weekday, from: selectedDate)
+    }
+
     func toggleDisplayMode() {
         var next = state
         next.uiPreferences.displayMode = displayMode == .normal ? .compact : .normal
@@ -296,6 +408,10 @@ final class HabitViewModel: ObservableObject {
 
     func openCalendar() {
         activePanel = .calendar
+    }
+
+    func openWeekPlan() {
+        activePanel = .weekPlan
     }
 
     func openReminders() {
@@ -479,18 +595,39 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func habits(on date: Date) -> [HabitItem] {
+        state.habits.filter { habitApplies($0, on: date) }
+    }
+
+    private func habitApplies(_ habit: HabitItem, on date: Date) -> Bool {
         let selected = HabitDate.startOfDay(date)
-        return state.habits.filter { habit in
-            if let startDateKey = habit.startDateKey,
-               HabitDate.date(from: startDateKey) > selected {
-                return false
-            }
-            if let endDateKey = habit.endDateKey,
-               HabitDate.date(from: endDateKey) < selected {
-                return false
-            }
-            return true
+        let key = HabitDate.key(for: selected)
+        if state.hiddenHabits[key]?.contains(habit.id) == true {
+            return false
         }
+        if let startDateKey = habit.startDateKey,
+           HabitDate.date(from: startDateKey) > selected {
+            return false
+        }
+        if let endDateKey = habit.endDateKey,
+           HabitDate.date(from: endDateKey) < selected {
+            return false
+        }
+        return habit.repeatRule.applies(to: selected)
+    }
+
+    private func normalizedRepeatRule(_ rule: HabitRepeatRule) -> HabitRepeatRule {
+        if rule.kind == .custom {
+            let weekdays = Self.normalizedWeekdays(rule.weekdays)
+            if weekdays.isEmpty {
+                return .custom([HabitDate.calendar.component(.weekday, from: selectedDate)])
+            }
+            return .custom(weekdays)
+        }
+        return rule
+    }
+
+    private static func normalizedWeekdays(_ weekdays: [Int]) -> [Int] {
+        Array(Set(weekdays.filter { (1...7).contains($0) })).sorted()
     }
 
     private static func normalize(_ state: AppState) -> AppState {
@@ -500,8 +637,17 @@ final class HabitViewModel: ObservableObject {
             if updated.baseTitle.isEmpty {
                 updated.baseTitle = updated.title
             }
+            updated.repeatRule = normalizedRuleForStoredHabit(updated.repeatRule)
             return updated
         }
         return normalized
+    }
+
+    private static func normalizedRuleForStoredHabit(_ rule: HabitRepeatRule) -> HabitRepeatRule {
+        if rule.kind == .custom {
+            let weekdays = normalizedWeekdays(rule.weekdays)
+            return weekdays.isEmpty ? .daily : .custom(weekdays)
+        }
+        return rule
     }
 }

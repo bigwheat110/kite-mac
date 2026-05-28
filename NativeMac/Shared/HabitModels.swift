@@ -1,11 +1,62 @@
 import Foundation
 
+enum HabitRepeatKind: String, Codable, Hashable {
+    case daily
+    case weekdays
+    case weekends
+    case custom
+}
+
+struct HabitRepeatRule: Codable, Hashable {
+    var kind: HabitRepeatKind
+    var weekdays: [Int]
+
+    static let daily = HabitRepeatRule(kind: .daily, weekdays: [])
+    static let weekdays = HabitRepeatRule(kind: .weekdays, weekdays: [])
+    static let weekends = HabitRepeatRule(kind: .weekends, weekdays: [])
+
+    static func custom(_ weekdays: [Int]) -> HabitRepeatRule {
+        HabitRepeatRule(kind: .custom, weekdays: weekdays)
+    }
+
+    var title: String {
+        switch kind {
+        case .daily:
+            return "每天"
+        case .weekdays:
+            return "工作日"
+        case .weekends:
+            return "周末"
+        case .custom:
+            let titles = weekdays
+                .sorted()
+                .compactMap { HabitDate.weekdayTitle(for: $0) }
+            return titles.isEmpty ? "自定义周几" : titles.joined(separator: "、")
+        }
+    }
+
+    func applies(to date: Date) -> Bool {
+        let weekday = HabitDate.calendar.component(.weekday, from: date)
+        switch kind {
+        case .daily:
+            return true
+        case .weekdays:
+            return (2...6).contains(weekday)
+        case .weekends:
+            return weekday == 1 || weekday == 7
+        case .custom:
+            return weekdays.contains(weekday)
+        }
+    }
+}
+
 struct HabitItem: Codable, Hashable, Identifiable {
     let id: UUID
     var title: String
     var createdAt: Date
     var startDateKey: String?
     var endDateKey: String?
+    var repeatRule: HabitRepeatRule
     var baseTitle: String
     var titleHistory: [String: String]
 
@@ -15,6 +66,7 @@ struct HabitItem: Codable, Hashable, Identifiable {
         createdAt: Date = .now,
         startDateKey: String? = nil,
         endDateKey: String? = nil,
+        repeatRule: HabitRepeatRule = .daily,
         baseTitle: String? = nil,
         titleHistory: [String: String] = [:]
     ) {
@@ -23,8 +75,32 @@ struct HabitItem: Codable, Hashable, Identifiable {
         self.createdAt = createdAt
         self.startDateKey = startDateKey
         self.endDateKey = endDateKey
+        self.repeatRule = repeatRule
         self.baseTitle = baseTitle ?? title
         self.titleHistory = titleHistory
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case createdAt
+        case startDateKey
+        case endDateKey
+        case repeatRule
+        case baseTitle
+        case titleHistory
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        startDateKey = try container.decodeIfPresent(String.self, forKey: .startDateKey)
+        endDateKey = try container.decodeIfPresent(String.self, forKey: .endDateKey)
+        repeatRule = try container.decodeIfPresent(HabitRepeatRule.self, forKey: .repeatRule) ?? .daily
+        baseTitle = try container.decodeIfPresent(String.self, forKey: .baseTitle) ?? title
+        titleHistory = try container.decodeIfPresent([String: String].self, forKey: .titleHistory) ?? [:]
     }
 }
 
@@ -147,9 +223,49 @@ struct AppState: Codable {
     var habits: [HabitItem]
     var entries: [String: [UUID: Bool]]
     var dailyOverrides: [String: [UUID: String]]
+    var hiddenHabits: [String: [UUID]]
     var reminders: [ReminderItem]
     var uiPreferences: UIPreferences
     var focusSession: FocusSessionState
+
+    init(
+        habits: [HabitItem],
+        entries: [String: [UUID: Bool]],
+        dailyOverrides: [String: [UUID: String]],
+        hiddenHabits: [String: [UUID]] = [:],
+        reminders: [ReminderItem],
+        uiPreferences: UIPreferences,
+        focusSession: FocusSessionState
+    ) {
+        self.habits = habits
+        self.entries = entries
+        self.dailyOverrides = dailyOverrides
+        self.hiddenHabits = hiddenHabits
+        self.reminders = reminders
+        self.uiPreferences = uiPreferences
+        self.focusSession = focusSession
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case habits
+        case entries
+        case dailyOverrides
+        case hiddenHabits
+        case reminders
+        case uiPreferences
+        case focusSession
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        habits = try container.decodeIfPresent([HabitItem].self, forKey: .habits) ?? []
+        entries = try container.decodeIfPresent([String: [UUID: Bool]].self, forKey: .entries) ?? [:]
+        dailyOverrides = try container.decodeIfPresent([String: [UUID: String]].self, forKey: .dailyOverrides) ?? [:]
+        hiddenHabits = try container.decodeIfPresent([String: [UUID]].self, forKey: .hiddenHabits) ?? [:]
+        reminders = try container.decodeIfPresent([ReminderItem].self, forKey: .reminders) ?? []
+        uiPreferences = try container.decodeIfPresent(UIPreferences.self, forKey: .uiPreferences) ?? .default
+        focusSession = try container.decodeIfPresent(FocusSessionState.self, forKey: .focusSession) ?? .default
+    }
 
     static let `default` = AppState(
         habits: [
@@ -165,6 +281,7 @@ struct AppState: Codable {
         ],
         entries: [:],
         dailyOverrides: [:],
+        hiddenHabits: [:],
         reminders: [
             ReminderItem(title: "早间检查今日待办", hour: 8, minute: 30),
             ReminderItem(title: "晚上完成收尾事项", hour: 21, minute: 0, repeatMode: .daily)
@@ -177,6 +294,7 @@ struct AppState: Codable {
 enum ToolbarPanel: String, Identifiable {
     case overview
     case calendar
+    case weekPlan
     case reminders
 
     var id: String { rawValue }
@@ -217,6 +335,12 @@ enum HabitDate {
     static func weekdayTitle(_ date: Date) -> String {
         let titles = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
         return titles[calendar.component(.weekday, from: date) - 1]
+    }
+
+    static func weekdayTitle(for weekday: Int) -> String? {
+        let titles = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        guard (1...7).contains(weekday) else { return nil }
+        return titles[weekday - 1]
     }
 
     static func dayLabel(_ date: Date) -> String {
