@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'KiteNative' in project 'KiteNative'
+➜ Explicit dependency on target 'KiteWidgetExtension' in project 'KiteNative'
+Target 'KiteWidgetExtension' in project 'KiteNative' (no dependencies)

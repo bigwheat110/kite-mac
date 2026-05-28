@@ -1,0 +1,56 @@
+{
+  "" : {
+    "const-values" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary.swiftconstvalues",
+    "dependencies" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary.d",
+    "diagnostics" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary.dia",
+    "emit-module-dependencies" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary-emit-module.dia",
+    "pch" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNative-primary.swiftdeps"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/AppDelegate.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/AppDelegate.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/ChecklistView.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/ChecklistView.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/ChecklistView.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/ChecklistView.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/HabitViewModel.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitViewModel.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitViewModel.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitViewModel.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/KiteNativeApp.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNativeApp.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNativeApp.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/KiteNativeApp.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/PanelWindowController.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/PanelWindowController.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/PanelWindowController.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/PanelWindowController.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/SettingsView.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/SettingsView.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/Shared/HabitModels.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitModels.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitModels.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitModels.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/Shared/HabitStore.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitStore.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitStore.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/HabitStore.o"
+  },
+  "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/dyliu/Desktop/software/kite-mac/NativeMac/build/Build/Intermediates.noindex/KiteNative.build/Release/KiteNative.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

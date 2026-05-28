@@ -393,6 +393,10 @@ final class HabitViewModel: ObservableObject {
         persist()
     }
 
+    func toggleTheme() {
+        setTheme(theme == .dark ? .light : .dark)
+    }
+
     func toggleFocusMode() {
         var next = state
         next.uiPreferences.focusModeEnabled.toggle()

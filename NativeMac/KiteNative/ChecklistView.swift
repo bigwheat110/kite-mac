@@ -134,17 +134,20 @@ private struct HeaderBarView: View {
             Spacer()
 
             HStack(spacing: 11) {
-                IconButton(systemName: "sparkles", action: store.openOverview, symbolSize: 16)
-                IconButton(systemName: "calendar", action: store.openCalendar, symbolSize: 15)
-                IconButton(systemName: "calendar.day.timeline.left", action: store.openWeekPlan, symbolSize: 15)
-                IconButton(systemName: "rectangle.split.3x1", action: store.toggleDisplayMode, symbolSize: 15)
-                IconButton(systemName: "moon", action: store.toggleFocusMode, symbolSize: 15, highlighted: store.isFocusModeEnabled)
-                Divider()
-                    .frame(width: 1, height: 18)
-                    .overlay(Color.white.opacity(0.12))
-                IconButton(systemName: "pin", action: store.toggleAlwaysOnTop, symbolSize: 15, highlighted: store.isAlwaysOnTop)
-                IconButton(systemName: "minus", action: store.minimizeWindow, symbolSize: 15)
-                IconButton(systemName: "xmark", action: store.closeWindow, symbolSize: 15)
+                IconButton(systemName: "sparkles", action: store.openOverview, symbolSize: 16, tint: palette.textSecondary)
+                IconButton(systemName: "calendar", action: store.openCalendar, symbolSize: 15, tint: palette.textSecondary)
+                IconButton(systemName: "calendar.day.timeline.left", action: store.openWeekPlan, symbolSize: 15, tint: palette.textSecondary)
+                IconButton(systemName: "rectangle.split.3x1", action: store.toggleDisplayMode, symbolSize: 15, tint: palette.textSecondary)
+                IconButton(
+                    systemName: store.theme == .dark ? "circle.lefthalf.filled" : "circle.righthalf.filled",
+                    action: store.toggleTheme,
+                    symbolSize: 15,
+                    tint: palette.textSecondary
+                )
+                IconButton(systemName: "sparkles", action: store.toggleFocusMode, symbolSize: 15, highlighted: store.isFocusModeEnabled, tint: palette.textSecondary)
+                IconButton(systemName: "pin", action: store.toggleAlwaysOnTop, symbolSize: 15, highlighted: store.isAlwaysOnTop, tint: palette.textSecondary)
+                IconButton(systemName: "minus", action: store.minimizeWindow, symbolSize: 15, tint: palette.textSecondary)
+                IconButton(systemName: "xmark", action: store.closeWindow, symbolSize: 15, tint: palette.textSecondary)
             }
             .padding(.trailing, 4)
         }
@@ -672,20 +675,20 @@ private struct WeekPlanPanelView: View {
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 22) {
             HStack {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("本周安排")
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.system(size: 30, weight: .bold))
                         .foregroundStyle(palette.textPrimary)
                     Text("按周查看每天会出现的事项。")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(palette.textSecondary)
                 }
 
                 Spacer()
 
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     Button {
                         store.shiftWeek(by: -1)
                     } label: {
@@ -707,15 +710,15 @@ private struct WeekPlanPanelView: View {
                 }
             }
 
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: 14) {
                 ForEach(store.weekPlanDays) { day in
-                    VStack(alignment: .leading, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(day.weekdayTitle)
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(palette.textPrimary)
                             Text(day.dayLabel)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(palette.textSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -724,42 +727,49 @@ private struct WeekPlanPanelView: View {
                             .overlay(palette.divider)
 
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 10) {
                                 if day.habits.isEmpty {
                                     Text("无")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .font(.system(size: 14, weight: .medium))
                                         .foregroundStyle(palette.textSecondary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 } else {
                                     ForEach(day.habits) { habit in
                                         Text(store.title(for: habit, on: day.date))
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(.system(size: 15, weight: .semibold))
                                             .foregroundStyle(palette.textPrimary)
                                             .lineLimit(2)
                                             .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding(.horizontal, 9)
-                                            .padding(.vertical, 7)
-                                            .background(palette.panelStrong, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                            .padding(.horizontal, 11)
+                                            .padding(.vertical, 9)
+                                            .background(
+                                                palette.panelStrong,
+                                                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            )
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, minHeight: 420, alignment: .topLeading)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(14)
+                    .frame(maxWidth: .infinity, minHeight: 460, alignment: .topLeading)
+                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(palette.divider, lineWidth: 1)
                     )
                 }
             }
         }
-        .padding(24)
+        .padding(28)
         .background(
-            LinearGradient(colors: [palette.backgroundTop.opacity(0.94), palette.backgroundBottom.opacity(0.94)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(
+                colors: [palette.backgroundTop.opacity(0.96), palette.backgroundBottom.opacity(0.96)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         )
-        .frame(minWidth: 1100, minHeight: 620)
+        .frame(minWidth: 1140, minHeight: 680)
     }
 }
 
@@ -938,12 +948,13 @@ private struct IconButton: View {
     let action: () -> Void
     var symbolSize: CGFloat = 16
     var highlighted = false
+    var tint: Color = Color.white.opacity(0.72)
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: symbolSize, weight: .medium))
-                .foregroundStyle(highlighted ? Color.yellow : Color.white.opacity(0.72))
+                .foregroundStyle(highlighted ? tint.opacity(1.0) : tint.opacity(0.82))
                 .frame(width: 20, height: 20)
         }
         .buttonStyle(.plain)

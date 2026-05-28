@@ -6,7 +6,7 @@
 - 默认只修改代码，不主动执行完整的 build -> test -> restart -> commit -> push 流程。
 - 默认不主动提交 commit。
 - 默认不主动 push 到 `origin`。
-- 默认不主动重启 `KiteNative`，除非用户明确要求启动、重启或切到前台。
+- 默认主动重启 `KiteNative`，除非用户明确要求启动、重启或切到前台。
 
 ## 什么时候才执行这些操作
 
