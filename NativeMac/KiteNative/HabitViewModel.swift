@@ -84,7 +84,7 @@ final class HabitViewModel: ObservableObject {
     init() {
         let loaded = HabitStore.shared.load()
         state = Self.normalize(loaded)
-        selectedDate = HabitDate.date(from: loaded.uiPreferences.lastSelectedDateKey)
+        selectedDate = HabitDate.startOfDay(.now)
     }
 
     var habits: [HabitItem] { habits(on: selectedDate) }

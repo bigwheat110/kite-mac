@@ -12,11 +12,19 @@ dist
 dist-ssr
 *.local
 
+# Xcode build output
+build/
+DerivedData/
+*.dSYM/
+*.xcarchive/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+**/xcuserdata/
+*.xcuserstate
 *.suo
 *.ntvs*
 *.njsproj

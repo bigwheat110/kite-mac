@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 private struct ThemePalette {
@@ -110,10 +111,91 @@ struct ChecklistView: View {
                     .padding(.vertical, 10)
                     .background(Color.white.opacity(0.10), in: Capsule())
                     .padding(.bottom, 10)
-            }
+                }
         }
+        .background(
+            MainWindowClickDismissHandler(activePanel: $store.activePanel)
+        )
         .onAppear {
             store.applyWindowPreferences()
+        }
+    }
+}
+
+private struct MainWindowClickDismissHandler: NSViewRepresentable {
+    @Binding var activePanel: ToolbarPanel?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(activePanel: $activePanel)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.isHidden = true
+        context.coordinator.hostView = view
+        context.coordinator.update(activePanel: activePanel)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.hostView = nsView
+        context.coordinator.update(activePanel: activePanel)
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.stopListening()
+    }
+
+    final class Coordinator {
+        private var activePanel: Binding<ToolbarPanel?>
+        private var localMonitor: Any?
+        weak var hostView: NSView?
+
+        init(activePanel: Binding<ToolbarPanel?>) {
+            self.activePanel = activePanel
+        }
+
+        func update(activePanel: ToolbarPanel?) {
+            if Self.isDismissible(panel: activePanel) {
+                startListeningIfNeeded()
+            } else {
+                stopListening()
+            }
+        }
+
+        func stopListening() {
+            if let localMonitor {
+                NSEvent.removeMonitor(localMonitor)
+                self.localMonitor = nil
+            }
+        }
+
+        private func startListeningIfNeeded() {
+            guard localMonitor == nil else { return }
+
+            localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+                guard let self else { return event }
+                guard Self.isDismissible(panel: self.activePanel.wrappedValue) else {
+                    self.stopListening()
+                    return event
+                }
+                guard event.window === self.hostView?.window else {
+                    return event
+                }
+
+                self.activePanel.wrappedValue = nil
+                self.stopListening()
+                return nil
+            }
+        }
+
+        private static func isDismissible(panel: ToolbarPanel?) -> Bool {
+            switch panel {
+            case .overview, .calendar, .weekPlan:
+                return true
+            case .reminders, nil:
+                return false
+            }
         }
     }
 }
