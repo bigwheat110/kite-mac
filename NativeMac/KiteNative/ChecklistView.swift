@@ -227,7 +227,14 @@ private struct HeaderBarView: View {
                     tint: palette.textSecondary
                 )
                 IconButton(systemName: "sparkles", action: store.toggleFocusMode, symbolSize: 15, highlighted: store.isFocusModeEnabled, tint: palette.textSecondary)
-                IconButton(systemName: "pin", action: store.toggleAlwaysOnTop, symbolSize: 15, highlighted: store.isAlwaysOnTop, tint: palette.textSecondary)
+                IconButton(
+                    systemName: "pin",
+                    action: store.toggleAlwaysOnTop,
+                    symbolSize: 15,
+                    highlighted: store.isAlwaysOnTop,
+                    tint: palette.textSecondary,
+                    tiltWhenHighlighted: true
+                )
                 IconButton(systemName: "minus", action: store.minimizeWindow, symbolSize: 15, tint: palette.textSecondary)
                 IconButton(systemName: "xmark", action: store.closeWindow, symbolSize: 15, tint: palette.textSecondary)
             }
@@ -1031,13 +1038,28 @@ private struct IconButton: View {
     var symbolSize: CGFloat = 16
     var highlighted = false
     var tint: Color = Color.white.opacity(0.72)
+    var tiltWhenHighlighted = false
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: symbolSize, weight: .medium))
-                .foregroundStyle(highlighted ? tint.opacity(1.0) : tint.opacity(0.82))
+                .foregroundStyle(highlighted ? Color.white : tint.opacity(0.82))
                 .frame(width: 20, height: 20)
+                .padding(4)
+                .rotationEffect(highlighted && tiltWhenHighlighted ? .degrees(-20) : .degrees(0))
+                .offset(y: highlighted && tiltWhenHighlighted ? -0.5 : 0)
+                .animation(.spring(response: 0.22, dampingFraction: 0.72), value: highlighted)
+                .background {
+                    if highlighted {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(Color.white.opacity(0.14))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
+                            }
+                    }
+                }
         }
         .buttonStyle(.plain)
     }
