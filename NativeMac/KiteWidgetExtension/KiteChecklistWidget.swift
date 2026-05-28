@@ -39,7 +39,7 @@ struct KiteChecklistWidgetView: View {
     private var todayKey: String { HabitDate.key(for: .now) }
 
     private var topHabits: [HabitItem] {
-        Array(entry.state.habits.prefix(6))
+        Array(entry.state.habits.filter(isActiveToday).prefix(6))
     }
 
     var body: some View {
@@ -80,5 +80,18 @@ struct KiteChecklistWidgetView: View {
 
     private func isDone(_ habit: HabitItem) -> Bool {
         entry.state.entries[todayKey]?[habit.id] == true
+    }
+
+    private func isActiveToday(_ habit: HabitItem) -> Bool {
+        let today = HabitDate.startOfDay(.now)
+        if let startDateKey = habit.startDateKey,
+           HabitDate.date(from: startDateKey) > today {
+            return false
+        }
+        if let endDateKey = habit.endDateKey,
+           HabitDate.date(from: endDateKey) < today {
+            return false
+        }
+        return true
     }
 }

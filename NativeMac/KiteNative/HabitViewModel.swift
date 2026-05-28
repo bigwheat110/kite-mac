@@ -65,7 +65,7 @@ final class HabitViewModel: ObservableObject {
         selectedDate = HabitDate.date(from: loaded.uiPreferences.lastSelectedDateKey)
     }
 
-    var habits: [HabitItem] { state.habits }
+    var habits: [HabitItem] { habits(on: selectedDate) }
     var reminders: [ReminderItem] { state.reminders.sorted { ($0.hour, $0.minute) < ($1.hour, $1.minute) } }
     var isFocusModeEnabled: Bool { state.uiPreferences.focusModeEnabled }
     var isAlwaysOnTop: Bool { state.uiPreferences.alwaysOnTop }
@@ -112,7 +112,8 @@ final class HabitViewModel: ObservableObject {
     var weekItems: [WeekDayItem] {
         HabitDate.weekDates(containing: selectedDate).map { date in
             let key = HabitDate.key(for: date)
-            let completion = habits.filter { state.entries[key]?[$0.id] == true }.count
+            let dayHabits = habits(on: date)
+            let completion = dayHabits.filter { state.entries[key]?[$0.id] == true }.count
             let hasReminder = reminders.contains { reminder in
                 reminder.enabled && reminderApplies(reminder, to: date)
             }
@@ -135,8 +136,9 @@ final class HabitViewModel: ObservableObject {
         let monthAnchor = HabitDate.startOfMonth(for: selectedDate)
         return HabitDate.monthDates(containing: selectedDate).map { date in
             let key = HabitDate.key(for: date)
-            let completion = habits.filter { state.entries[key]?[$0.id] == true }.count
-            let pending = habits
+            let dayHabits = habits(on: date)
+            let completion = dayHabits.filter { state.entries[key]?[$0.id] == true }.count
+            let pending = dayHabits
                 .filter { state.entries[key]?[$0.id] != true }
                 .map { title(for: $0, on: date) }
             let pendingSummary: String
@@ -155,7 +157,7 @@ final class HabitViewModel: ObservableObject {
                 isSelected: HabitDate.startOfDay(date) == HabitDate.startOfDay(selectedDate),
                 isToday: HabitDate.isToday(date),
                 completionCount: completion,
-                totalCount: habits.count,
+                totalCount: dayHabits.count,
                 pendingSummary: pendingSummary
             )
         }
@@ -223,10 +225,25 @@ final class HabitViewModel: ObservableObject {
     }
 
     func addHabit() {
+        addHabit(scope: .templateFromToday)
+    }
+
+    func addTodayOnlyHabit() {
+        addHabit(scope: .todayOnly)
+    }
+
+    private func addHabit(scope: HabitEditMode) {
         let trimmed = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         var next = state
-        next.habits.append(HabitItem(title: trimmed))
+        switch scope {
+        case .todayOnly:
+            next.habits.append(HabitItem(title: trimmed, startDateKey: dateKey, endDateKey: dateKey))
+            statusMessage = "仅今天已新增"
+        case .templateFromToday:
+            next.habits.append(HabitItem(title: trimmed, startDateKey: dateKey))
+            statusMessage = "已加入模板，从这一天起生效"
+        }
         state = next
         draftTitle = ""
         persist()
@@ -459,6 +476,21 @@ final class HabitViewModel: ObservableObject {
 
     private func persist() {
         HabitStore.shared.save(state)
+    }
+
+    private func habits(on date: Date) -> [HabitItem] {
+        let selected = HabitDate.startOfDay(date)
+        return state.habits.filter { habit in
+            if let startDateKey = habit.startDateKey,
+               HabitDate.date(from: startDateKey) > selected {
+                return false
+            }
+            if let endDateKey = habit.endDateKey,
+               HabitDate.date(from: endDateKey) < selected {
+                return false
+            }
+            return true
+        }
     }
 
     private static func normalize(_ state: AppState) -> AppState {

@@ -65,15 +65,16 @@ struct ChecklistView: View {
 
             VStack(spacing: store.displayMode == .compact ? 8 : 9) {
                 HeaderBarView()
-                if !store.isFocusModeEnabled {
-                    ActionButtonsView()
-                }
+                    .padding(.top, store.displayMode == .compact ? 6 : 12)
+                Spacer()
+                    .frame(height: store.displayMode == .compact ? 6 : 12)
                 WeekStripView()
                 HabitListView()
+                    .frame(maxHeight: .infinity)
                 AddHabitBarView()
             }
             .padding(.horizontal, store.displayMode == .compact ? 12 : 18)
-            .padding(.top, store.displayMode == .compact ? 6 : 8)
+            .padding(.top, store.displayMode == .compact ? 4 : 6)
             .padding(.bottom, store.displayMode == .compact ? 10 : 12)
         }
         .sheet(item: $store.activePanel) { panel in
@@ -189,7 +190,7 @@ private struct WeekStripView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
-                    .frame(width: 32, height: 68)
+                    .frame(width: 32, height: 54)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-prev-button")
@@ -197,29 +198,39 @@ private struct WeekStripView: View {
             HStack(spacing: 8) {
                 ForEach(store.weekItems) { item in
                     Button(action: { store.select(date: item.date) }) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Spacer()
+                        ZStack(alignment: .topLeading) {
+                            if item.hasMarker {
                                 Circle()
-                                    .fill(item.hasMarker ? Color(red: 0.96, green: 0.74, blue: 0.08) : .clear)
+                                    .fill(Color(red: 0.96, green: 0.74, blue: 0.08))
                                     .frame(width: 8, height: 8)
+                                    .frame(maxWidth: .infinity, alignment: .topTrailing)
+                                    .padding(.top, 6)
+                                    .padding(.trailing, 6)
                             }
 
-                            Text(item.weekdayTitle)
-                                .font(.system(size: 18, weight: .medium))
-                            Text(item.dayLabel)
-                                .font(.system(size: 14, weight: .regular))
-                            Spacer(minLength: 0)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Spacer()
+                                    .frame(height: 6)
+
+                                Text(item.weekdayTitle)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .frame(height: 22, alignment: .topLeading)
+
+                                Text(item.dayLabel)
+                                    .font(.system(size: 13, weight: .regular))
+                                    .frame(height: 16, alignment: .topLeading)
+
+                                Spacer(minLength: 0)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         }
                         .foregroundStyle(item.isSelected ? palette.accent : palette.textPrimary.opacity(0.72))
-                        .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
+                        .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54, alignment: .topLeading)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 4)
                         .background(
-                            item.isSelected
-                                ? palette.panelStrong
-                                : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(item.isSelected ? palette.panelStrong : Color.clear)
                         )
                     }
                     .buttonStyle(.plain)
@@ -232,7 +243,7 @@ private struct WeekStripView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
-                    .frame(width: 32, height: 68)
+                    .frame(width: 32, height: 54)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-next-button")
@@ -247,17 +258,19 @@ private struct HabitListView: View {
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            habitSection(for: store.pendingHabits)
+        ScrollView {
+            VStack(spacing: 0) {
+                habitSection(for: store.pendingHabits)
 
-            if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
-                Divider()
-                    .overlay(Color.white.opacity(0.08))
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 4)
+                if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
+                    Divider()
+                        .overlay(Color.white.opacity(0.08))
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 4)
+                }
+
+                habitSection(for: store.completedHabits)
             }
-
-            habitSection(for: store.completedHabits)
         }
         .animation(.easeInOut(duration: 0.18), value: store.orderedHabits.map(\.id))
         .animation(.easeInOut(duration: 0.18), value: store.doneCount)
@@ -403,14 +416,27 @@ private struct AddHabitBarView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            TextField("添加一个每天都想做的事项", text: $store.draftTitle)
+            TextField("从这一天起添加一个固定事项", text: $store.draftTitle)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(palette.textPrimary)
                 .padding(.horizontal, 15)
                 .frame(height: 42)
                 .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityIdentifier("add-habit-input")
+                .onSubmit {
+                    store.addHabit()
+                }
+
+            Button(action: store.addTodayOnlyHabit) {
+                Text("仅今天")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(palette.textPrimary)
+                    .frame(width: 58, height: 42)
+                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("add-today-habit-button")
 
             Button(action: store.addHabit) {
                 Image(systemName: "plus")

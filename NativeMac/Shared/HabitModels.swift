@@ -4,6 +4,8 @@ struct HabitItem: Codable, Hashable, Identifiable {
     let id: UUID
     var title: String
     var createdAt: Date
+    var startDateKey: String?
+    var endDateKey: String?
     var baseTitle: String
     var titleHistory: [String: String]
 
@@ -11,12 +13,16 @@ struct HabitItem: Codable, Hashable, Identifiable {
         id: UUID = UUID(),
         title: String,
         createdAt: Date = .now,
+        startDateKey: String? = nil,
+        endDateKey: String? = nil,
         baseTitle: String? = nil,
         titleHistory: [String: String] = [:]
     ) {
         self.id = id
         self.title = title
         self.createdAt = createdAt
+        self.startDateKey = startDateKey
+        self.endDateKey = endDateKey
         self.baseTitle = baseTitle ?? title
         self.titleHistory = titleHistory
     }
