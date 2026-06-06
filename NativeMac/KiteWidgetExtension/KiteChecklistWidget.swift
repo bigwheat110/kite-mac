@@ -36,10 +36,12 @@ struct KiteChecklistWidget: Widget {
 struct KiteChecklistWidgetView: View {
     let entry: KiteEntry
 
+    private let habitSortLocale = Locale(identifier: "zh_Hans")
+
     private var todayKey: String { HabitDate.key(for: .now) }
 
     private var topHabits: [HabitItem] {
-        Array(entry.state.habits.filter(isActiveToday).prefix(6))
+        Array(entry.state.habits.filter(isActiveToday).sorted(shouldSort).prefix(6))
     }
 
     var body: some View {
@@ -80,6 +82,18 @@ struct KiteChecklistWidgetView: View {
 
     private func isDone(_ habit: HabitItem) -> Bool {
         entry.state.entries[todayKey]?[habit.id] == true
+    }
+
+    private func shouldSort(_ lhs: HabitItem, before rhs: HabitItem) -> Bool {
+        let comparison = lhs.title.compare(
+            rhs.title,
+            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+            locale: habitSortLocale
+        )
+        if comparison != .orderedSame {
+            return comparison == .orderedAscending
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
     }
 
     private func isActiveToday(_ habit: HabitItem) -> Bool {

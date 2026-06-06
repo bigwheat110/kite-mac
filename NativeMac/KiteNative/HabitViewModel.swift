@@ -69,6 +69,8 @@ enum HabitDeleteMode: String {
 
 @MainActor
 final class HabitViewModel: ObservableObject {
+    private static let habitSortLocale = Locale(identifier: "zh_Hans")
+
     @Published var state: AppState
     @Published var selectedDate: Date
     @Published var draftTitle = ""
@@ -102,7 +104,7 @@ final class HabitViewModel: ObservableObject {
             if lhsDone != rhsDone {
                 return !lhsDone && rhsDone
             }
-            return (orderMap[lhs.id] ?? 0) < (orderMap[rhs.id] ?? 0)
+            return shouldSort(lhs, before: rhs, on: selectedDate, orderMap: orderMap)
         }
     }
 
@@ -158,7 +160,7 @@ final class HabitViewModel: ObservableObject {
         let monthAnchor = HabitDate.startOfMonth(for: selectedDate)
         return HabitDate.monthDates(containing: selectedDate).map { date in
             let key = HabitDate.key(for: date)
-            let dayHabits = habits(on: date)
+            let dayHabits = orderedHabits(on: date)
             let completion = dayHabits.filter { state.entries[key]?[$0.id] == true }.count
             let pending = dayHabits
                 .filter { state.entries[key]?[$0.id] != true }
@@ -195,7 +197,7 @@ final class HabitViewModel: ObservableObject {
 
     var weekPlanDays: [WeekPlanDay] {
         HabitDate.weekDates(containing: selectedDate).map { date in
-            WeekPlanDay(date: date, habits: habits(on: date))
+            WeekPlanDay(date: date, habits: orderedHabits(on: date))
         }
     }
 
@@ -600,6 +602,30 @@ final class HabitViewModel: ObservableObject {
 
     private func habits(on date: Date) -> [HabitItem] {
         state.habits.filter { habitApplies($0, on: date) }
+    }
+
+    private func orderedHabits(on date: Date) -> [HabitItem] {
+        let orderMap = Dictionary(uniqueKeysWithValues: state.habits.enumerated().map { ($1.id, $0) })
+        return habits(on: date).sorted { lhs, rhs in
+            shouldSort(lhs, before: rhs, on: date, orderMap: orderMap)
+        }
+    }
+
+    private func shouldSort(
+        _ lhs: HabitItem,
+        before rhs: HabitItem,
+        on date: Date,
+        orderMap: [UUID: Int]
+    ) -> Bool {
+        let comparison = title(for: lhs, on: date).compare(
+            title(for: rhs, on: date),
+            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+            locale: Self.habitSortLocale
+        )
+        if comparison != .orderedSame {
+            return comparison == .orderedAscending
+        }
+        return (orderMap[lhs.id] ?? 0) < (orderMap[rhs.id] ?? 0)
     }
 
     private func habitApplies(_ habit: HabitItem, on date: Date) -> Bool {
