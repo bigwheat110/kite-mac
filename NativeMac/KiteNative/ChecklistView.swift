@@ -291,6 +291,7 @@ private struct WeekStripView: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .frame(width: 32, height: 54)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-prev-button")
@@ -332,6 +333,7 @@ private struct WeekStripView: View {
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
                                 .fill(item.isSelected ? palette.panelStrong : Color.clear)
                         )
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("week-day-\(item.id)")
@@ -344,12 +346,12 @@ private struct WeekStripView: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
                     .frame(width: 32, height: 54)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-next-button")
         }
         .background(palette.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .accessibilityIdentifier("week-strip")
     }
 }
 
@@ -448,6 +450,11 @@ private struct HabitRowView: View {
                     .onSubmit {
                         store.saveHabitEdit()
                     }
+                    .onChange(of: isEditorFocused) { _, focused in
+                        if !focused && store.editingHabitId == habit.id {
+                            store.saveHabitEdit()
+                        }
+                    }
                     .onDisappear {
                         if store.editingHabitId == habit.id {
                             store.saveHabitEdit()
@@ -455,9 +462,7 @@ private struct HabitRowView: View {
                     }
             } else {
                 Button {
-                    if store.editingHabitId != habit.id {
-                        store.beginEdit(habit, mode: .todayOnly)
-                    }
+                    store.toggle(habit)
                 } label: {
                     Text(store.title(for: habit))
                         .font(.system(size: 17, weight: .medium))

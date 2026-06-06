@@ -16,7 +16,7 @@ final class HabitStore {
     }
 
     func load() -> AppState {
-        if ProcessInfo.processInfo.arguments.contains("--uitest-reset-state") {
+        if Self.shouldResetUITestState {
             save(.default)
             return .default
         }
@@ -44,7 +44,7 @@ final class HabitStore {
     }
 
     private func storageURL() -> URL? {
-        let isUITest = ProcessInfo.processInfo.arguments.contains("--uitest-reset-state")
+        let isUITest = Self.usesUITestState
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
@@ -56,5 +56,13 @@ final class HabitStore {
                 isDirectory: true
             )
             .appendingPathComponent(isUITest ? Self.uiTestFileName : Self.fileName)
+    }
+
+    private static var shouldResetUITestState: Bool {
+        ProcessInfo.processInfo.arguments.contains("--uitest-reset-state")
+    }
+
+    private static var usesUITestState: Bool {
+        shouldResetUITestState || ProcessInfo.processInfo.arguments.contains("--uitest-use-state")
     }
 }

@@ -428,7 +428,7 @@ final class HabitViewModel: ObservableObject {
     func beginEdit(_ habit: HabitItem, mode: HabitEditMode) {
         editingHabitId = habit.id
         editingMode = mode
-        editingHabitText = mode == .todayOnly ? title(for: habit) : habit.title
+        editingHabitText = title(for: habit)
     }
 
     func cancelEdit() {

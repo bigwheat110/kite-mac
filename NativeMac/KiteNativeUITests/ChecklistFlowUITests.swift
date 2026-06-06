@@ -20,29 +20,47 @@ final class ChecklistFlowUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
-    func testTapTitleStartsInlineEditing() throws {
+    private func element(labeled label: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func replaceText(in editor: XCUIElement, with text: String) {
+        editor.typeKey("a", modifierFlags: .command)
+        editor.typeText(text)
+        editor.typeText(XCUIKeyboardKey.return.rawValue)
+    }
+
+    func testTapTitleTogglesCompletion() throws {
+        let row = element("habit-row-\(japaneseID)")
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let originalY = row.frame.minY
+
         let title = element("habit-title-\(japaneseID)")
         XCTAssertTrue(title.waitForExistence(timeout: 5))
         title.tap()
 
         let editor = element("habit-editor-\(japaneseID)")
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertFalse(editor.waitForExistence(timeout: 1))
+        XCTAssertGreaterThan(row.frame.minY, originalY)
     }
 
     func testInlineRenameOnlyAffectsToday() throws {
         let title = element("habit-title-\(japaneseID)")
         XCTAssertTrue(title.waitForExistence(timeout: 5))
-        title.tap()
+        title.rightClick()
+
+        let rename = app.menuItems["仅修改今天"]
+        XCTAssertTrue(rename.waitForExistence(timeout: 5))
+        rename.tap()
 
         let editor = element("habit-editor-\(japaneseID)")
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + "德育")
-        editor.typeText(XCUIKeyboardKey.return.rawValue)
+        replaceText(in: editor, with: "德育")
 
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "label == %@", "德育")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "德育").waitForExistence(timeout: 5))
 
         app.buttons["week-next-button"].tap()
-        XCTAssertFalse(app.otherElements.matching(NSPredicate(format: "label == %@", "德育")).firstMatch.exists)
+        XCTAssertFalse(element(labeled: "德育").exists)
     }
 
     func testContextMenuTemplateRenameAffectsTodayAndFuture() throws {
@@ -56,15 +74,14 @@ final class ChecklistFlowUITests: XCTestCase {
 
         let editor = element("habit-editor-\(hairID)")
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + "政治")
-        editor.typeText(XCUIKeyboardKey.return.rawValue)
+        replaceText(in: editor, with: "政治")
 
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "label == %@", "政治")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "政治").waitForExistence(timeout: 5))
         app.buttons["week-next-button"].tap()
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "label == %@", "政治")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "政治").waitForExistence(timeout: 5))
         app.buttons["week-prev-button"].tap()
         app.buttons["week-prev-button"].tap()
-        XCTAssertFalse(app.otherElements.matching(NSPredicate(format: "label == %@", "政治")).firstMatch.exists)
+        XCTAssertFalse(element(labeled: "政治").exists)
     }
 
     func testToggleCompletionMovesRowToBottomAndBack() throws {
@@ -91,13 +108,14 @@ final class ChecklistFlowUITests: XCTestCase {
         input.typeText("新事项")
         app.buttons["add-habit-button"].tap()
 
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "label == %@", "新事项")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "新事项").waitForExistence(timeout: 5))
 
         app.terminate()
         app = XCUIApplication()
+        app.launchArguments.append("--uitest-use-state")
         app.launch()
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
-        XCTAssertTrue(app.otherElements.matching(NSPredicate(format: "label == %@", "新事项")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "新事项").waitForExistence(timeout: 5))
     }
 }

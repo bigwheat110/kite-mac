@@ -41,7 +41,7 @@ struct KiteChecklistWidgetView: View {
     private var todayKey: String { HabitDate.key(for: .now) }
 
     private var topHabits: [HabitItem] {
-        Array(entry.state.habits.filter(isActiveToday).sorted(shouldSort).prefix(6))
+        Array(entry.state.habits.filter(isActiveToday).sorted(by: shouldSort).prefix(6))
     }
 
     var body: some View {
