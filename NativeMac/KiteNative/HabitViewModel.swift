@@ -777,7 +777,17 @@ final class HabitViewModel: ObservableObject {
     }
 
     private static func duplicateTitleKey(_ title: String) -> String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        var normalized = ""
+        for scalar in trimmed.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .control, .format, .surrogate, .unassigned:
+                continue
+            default:
+                normalized.unicodeScalars.append(scalar)
+            }
+        }
+        return normalized.precomposedStringWithCanonicalMapping
     }
 
     private static func title(
