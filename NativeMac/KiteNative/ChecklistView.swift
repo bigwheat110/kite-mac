@@ -226,7 +226,6 @@ private struct HeaderBarView: View {
                     symbolSize: 15,
                     tint: palette.textSecondary
                 )
-                IconButton(systemName: "sparkles", action: store.toggleFocusMode, symbolSize: 15, highlighted: store.isFocusModeEnabled, tint: palette.textSecondary)
                 IconButton(
                     systemName: "pin",
                     action: store.toggleAlwaysOnTop,
@@ -289,7 +288,7 @@ private struct WeekStripView: View {
             Button(action: { store.shiftWeek(by: -1) }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(palette.textSecondary)
                     .frame(width: 32, height: 54)
                     .contentShape(Rectangle())
             }
@@ -344,7 +343,7 @@ private struct WeekStripView: View {
             Button(action: { store.shiftWeek(by: 1) }) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(palette.textSecondary)
                     .frame(width: 32, height: 54)
                     .contentShape(Rectangle())
             }
@@ -1049,7 +1048,7 @@ private struct IconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: symbolSize, weight: .medium))
-                .foregroundStyle(highlighted ? Color.white : tint.opacity(0.82))
+                .foregroundStyle(tint.opacity(0.82))
                 .frame(width: 20, height: 20)
                 .padding(4)
                 .rotationEffect(highlighted && tiltWhenHighlighted ? .degrees(-20) : .degrees(0))
@@ -1058,10 +1057,10 @@ private struct IconButton: View {
                 .background {
                     if highlighted {
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.14))
+                            .fill(tint.opacity(0.10))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
+                                    .stroke(tint.opacity(0.12), lineWidth: 0.8)
                             }
                     }
                 }
