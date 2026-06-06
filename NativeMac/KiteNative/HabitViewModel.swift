@@ -85,8 +85,12 @@ final class HabitViewModel: ObservableObject {
 
     init() {
         let loaded = HabitStore.shared.load()
-        state = Self.normalize(loaded)
+        let normalized = Self.normalize(loaded)
+        state = normalized.state
         selectedDate = HabitDate.startOfDay(.now)
+        if normalized.didChange {
+            persist()
+        }
     }
 
     var habits: [HabitItem] { habits(on: selectedDate) }
@@ -265,6 +269,10 @@ final class HabitViewModel: ObservableObject {
     private func addHabit(scope: HabitEditMode) {
         let trimmed = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        guard !hasVisibleHabit(named: trimmed, excluding: nil, on: selectedDate) else {
+            statusMessage = "今天已有同名事项"
+            return
+        }
         var next = state
         switch scope {
         case .todayOnly:
@@ -445,6 +453,10 @@ final class HabitViewModel: ObservableObject {
             cancelEdit()
             return
         }
+        guard !hasVisibleHabit(named: trimmed, excluding: habit.id, on: selectedDate) else {
+            statusMessage = "今天已有同名事项"
+            return
+        }
 
         var next = state
 
@@ -601,7 +613,7 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func habits(on date: Date) -> [HabitItem] {
-        state.habits.filter { habitApplies($0, on: date) }
+        uniqueVisibleHabits(state.habits.filter { habitApplies($0, on: date) }, on: date)
     }
 
     private func orderedHabits(on date: Date) -> [HabitItem] {
@@ -660,17 +672,42 @@ final class HabitViewModel: ObservableObject {
         Array(Set(weekdays.filter { (1...7).contains($0) })).sorted()
     }
 
-    private static func normalize(_ state: AppState) -> AppState {
+    private func hasVisibleHabit(named name: String, excluding excludedId: UUID?, on date: Date) -> Bool {
+        let candidateKey = Self.duplicateTitleKey(name)
+        return habits(on: date).contains { habit in
+            guard habit.id != excludedId else { return false }
+            return Self.duplicateTitleKey(title(for: habit, on: date)) == candidateKey
+        }
+    }
+
+    private func uniqueVisibleHabits(_ habits: [HabitItem], on date: Date) -> [HabitItem] {
+        var seenTitles = Set<String>()
+        return habits.filter { habit in
+            let key = Self.duplicateTitleKey(title(for: habit, on: date))
+            return seenTitles.insert(key).inserted
+        }
+    }
+
+    private static func normalize(_ state: AppState) -> (state: AppState, didChange: Bool) {
         var normalized = state
+        var didChange = false
         normalized.habits = normalized.habits.map { habit in
             var updated = habit
             if updated.baseTitle.isEmpty {
                 updated.baseTitle = updated.title
+                didChange = true
             }
-            updated.repeatRule = normalizedRuleForStoredHabit(updated.repeatRule)
+            let normalizedRule = normalizedRuleForStoredHabit(updated.repeatRule)
+            if updated.repeatRule != normalizedRule {
+                didChange = true
+            }
+            updated.repeatRule = normalizedRule
             return updated
         }
-        return normalized
+        if mergeKnownDuplicateDays(into: &normalized) {
+            didChange = true
+        }
+        return (normalized, didChange)
     }
 
     private static func normalizedRuleForStoredHabit(_ rule: HabitRepeatRule) -> HabitRepeatRule {
@@ -679,5 +716,106 @@ final class HabitViewModel: ObservableObject {
             return weekdays.isEmpty ? .daily : .custom(weekdays)
         }
         return rule
+    }
+
+    @discardableResult
+    private static func mergeKnownDuplicateDays(into state: inout AppState) -> Bool {
+        let knownDateKeys = Set(
+            Array(state.entries.keys) +
+            Array(state.dailyOverrides.keys) +
+            Array(state.hiddenHabits.keys) +
+            [HabitDate.key(for: .now), state.uiPreferences.lastSelectedDateKey]
+        )
+
+        var didChange = false
+        var replacementByHabitId: [UUID: UUID] = [:]
+        for dateKey in knownDateKeys {
+            let date = HabitDate.date(from: dateKey)
+            var keeperByTitle: [String: UUID] = [:]
+            for habit in state.habits where habitApplies(habit, on: date, hiddenHabits: state.hiddenHabits) {
+                let titleKey = duplicateTitleKey(title(for: habit, on: date, dailyOverrides: state.dailyOverrides))
+                if let keeperId = keeperByTitle[titleKey] {
+                    didChange = true
+                    replacementByHabitId[habit.id] = keeperId
+                    if state.entries[dateKey]?[habit.id] == true {
+                        state.entries[dateKey]?[keeperId] = true
+                    }
+                    state.entries[dateKey]?[habit.id] = nil
+
+                    if state.hiddenHabits[dateKey]?.contains(habit.id) == true,
+                       state.hiddenHabits[dateKey]?.contains(keeperId) != true {
+                        state.hiddenHabits[dateKey]?.append(keeperId)
+                    }
+                    state.hiddenHabits[dateKey]?.removeAll { $0 == habit.id }
+                    state.dailyOverrides[dateKey]?[habit.id] = nil
+                } else {
+                    keeperByTitle[titleKey] = habit.id
+                }
+            }
+        }
+
+        guard !replacementByHabitId.isEmpty else { return didChange }
+        for entryKey in Array(state.entries.keys) {
+            for (duplicateId, keeperId) in replacementByHabitId {
+                if state.entries[entryKey]?[duplicateId] == true {
+                    state.entries[entryKey]?[keeperId] = true
+                }
+                state.entries[entryKey]?[duplicateId] = nil
+                state.dailyOverrides[entryKey]?[duplicateId] = nil
+                state.hiddenHabits[entryKey]?.removeAll { $0 == duplicateId }
+            }
+        }
+        state.reminders = state.reminders.map { reminder in
+            var updated = reminder
+            if let linkedHabitId = updated.linkedHabitId,
+               let keeperId = replacementByHabitId[linkedHabitId] {
+                updated.linkedHabitId = keeperId
+            }
+            return updated
+        }
+        return didChange
+    }
+
+    private static func duplicateTitleKey(_ title: String) -> String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func title(
+        for habit: HabitItem,
+        on date: Date,
+        dailyOverrides: [String: [UUID: String]]
+    ) -> String {
+        let key = HabitDate.key(for: date)
+        if let override = dailyOverrides[key]?[habit.id] {
+            return override
+        }
+
+        let selected = HabitDate.date(from: key)
+        let effective = habit.titleHistory
+            .sorted { $0.key < $1.key }
+            .last(where: { HabitDate.date(from: $0.key) <= selected })
+
+        return effective?.value ?? habit.baseTitle
+    }
+
+    private static func habitApplies(
+        _ habit: HabitItem,
+        on date: Date,
+        hiddenHabits: [String: [UUID]]
+    ) -> Bool {
+        let selected = HabitDate.startOfDay(date)
+        let key = HabitDate.key(for: selected)
+        if hiddenHabits[key]?.contains(habit.id) == true {
+            return false
+        }
+        if let startDateKey = habit.startDateKey,
+           HabitDate.date(from: startDateKey) > selected {
+            return false
+        }
+        if let endDateKey = habit.endDateKey,
+           HabitDate.date(from: endDateKey) < selected {
+            return false
+        }
+        return habit.repeatRule.applies(to: selected)
     }
 }
