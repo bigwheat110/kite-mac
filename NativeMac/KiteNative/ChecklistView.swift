@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-private struct ThemePalette {
+struct ThemePalette {
     let backgroundTop: Color
     let backgroundBottom: Color
     let panel: Color
@@ -19,33 +19,33 @@ private struct ThemePalette {
         switch theme {
         case .dark:
             return ThemePalette(
-                backgroundTop: Color(red: 0.03, green: 0.06, blue: 0.12),
-                backgroundBottom: Color(red: 0.02, green: 0.04, blue: 0.09),
-                panel: Color(red: 0.15, green: 0.19, blue: 0.28),
-                panelStrong: Color(red: 0.02, green: 0.04, blue: 0.08),
-                card: Color(red: 0.14, green: 0.18, blue: 0.27),
+                backgroundTop: Color(red: 0.08, green: 0.08, blue: 0.09),
+                backgroundBottom: Color(red: 0.04, green: 0.04, blue: 0.05),
+                panel: Color(red: 0.14, green: 0.14, blue: 0.16),
+                panelStrong: Color(red: 0.09, green: 0.09, blue: 0.11),
+                card: Color(red: 0.18, green: 0.18, blue: 0.20),
                 textPrimary: .white,
-                textSecondary: Color(red: 0.63, green: 0.69, blue: 0.81),
-                divider: Color.white.opacity(0.08),
-                accent: Color(red: 0.19, green: 0.83, blue: 0.42),
-                accentSoft: Color(red: 0.14, green: 0.46, blue: 0.99),
-                success: Color(red: 0.19, green: 0.83, blue: 0.42),
-                successSoft: Color(red: 0.19, green: 0.83, blue: 0.42).opacity(0.16)
+                textSecondary: Color(red: 0.66, green: 0.67, blue: 0.72),
+                divider: Color.white.opacity(0.075),
+                accent: Color(red: 0.36, green: 0.70, blue: 1.0),
+                accentSoft: Color(red: 0.25, green: 0.52, blue: 0.92),
+                success: Color(red: 0.33, green: 0.82, blue: 0.58),
+                successSoft: Color(red: 0.33, green: 0.82, blue: 0.58).opacity(0.11)
             )
         case .light:
             return ThemePalette(
-                backgroundTop: Color(red: 0.95, green: 0.97, blue: 1.0),
-                backgroundBottom: Color(red: 0.90, green: 0.93, blue: 0.98),
-                panel: Color.white,
-                panelStrong: Color(red: 0.96, green: 0.97, blue: 0.99),
-                card: Color(red: 0.92, green: 0.94, blue: 0.98),
-                textPrimary: Color(red: 0.12, green: 0.16, blue: 0.24),
-                textSecondary: Color(red: 0.39, green: 0.45, blue: 0.56),
-                divider: Color.black.opacity(0.08),
-                accent: Color(red: 0.11, green: 0.64, blue: 0.32),
-                accentSoft: Color(red: 0.18, green: 0.48, blue: 0.96),
-                success: Color(red: 0.11, green: 0.64, blue: 0.32),
-                successSoft: Color(red: 0.11, green: 0.64, blue: 0.32).opacity(0.10)
+                backgroundTop: Color(red: 0.97, green: 0.97, blue: 0.96),
+                backgroundBottom: Color(red: 0.91, green: 0.92, blue: 0.94),
+                panel: Color.white.opacity(0.86),
+                panelStrong: Color(red: 0.94, green: 0.95, blue: 0.96),
+                card: Color.white,
+                textPrimary: Color(red: 0.10, green: 0.11, blue: 0.13),
+                textSecondary: Color(red: 0.42, green: 0.44, blue: 0.49),
+                divider: Color.black.opacity(0.075),
+                accent: Color(red: 0.0, green: 0.45, blue: 0.95),
+                accentSoft: Color(red: 0.0, green: 0.42, blue: 0.88),
+                success: Color(red: 0.08, green: 0.57, blue: 0.34),
+                successSoft: Color(red: 0.08, green: 0.57, blue: 0.34).opacity(0.08)
             )
         }
     }
@@ -66,9 +66,9 @@ struct ChecklistView: View {
 
             VStack(spacing: store.displayMode == .compact ? 8 : 9) {
                 HeaderBarView()
-                    .padding(.top, store.displayMode == .compact ? 6 : 12)
+                    .padding(.top, store.displayMode == .compact ? 8 : 14)
                 Spacer()
-                    .frame(height: store.displayMode == .compact ? 6 : 12)
+                    .frame(height: store.displayMode == .compact ? 4 : 8)
                 WeekStripView()
                 HabitListView()
                     .frame(maxHeight: .infinity)
@@ -205,17 +205,31 @@ private struct HeaderBarView: View {
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Kite 待办")
-                    .font(.system(size: 15, weight: .regular))
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 8) {
+                    Text("Kite")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.textPrimary)
+                        .accessibilityIdentifier("app-title")
+
+                    Text(store.progressText)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.accent)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(palette.accent.opacity(0.12), in: Capsule())
+                }
+
+                Text("\(store.selectedDateTitle) · \(store.pendingCount) 项待完成")
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(palette.textSecondary)
-                    .accessibilityIdentifier("app-title")
+                    .accessibilityIdentifier("app-subtitle")
             }
 
             Spacer()
 
-            HStack(spacing: 11) {
+            HStack(spacing: 6) {
                 IconButton(systemName: "sparkles", action: store.openOverview, symbolSize: 16, tint: palette.textSecondary)
                 IconButton(systemName: "calendar", action: store.openCalendar, symbolSize: 15, tint: palette.textSecondary)
                 IconButton(systemName: "calendar.day.timeline.left", action: store.openWeekPlan, symbolSize: 15, tint: palette.textSecondary)
@@ -237,7 +251,12 @@ private struct HeaderBarView: View {
                 IconButton(systemName: "minus", action: store.minimizeWindow, symbolSize: 15, tint: palette.textSecondary)
                 IconButton(systemName: "xmark", action: store.closeWindow, symbolSize: 15, tint: palette.textSecondary)
             }
-            .padding(.trailing, 4)
+            .padding(5)
+            .background(palette.panel.opacity(0.78), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(palette.divider, lineWidth: 0.8)
+            }
         }
     }
 }
@@ -288,8 +307,8 @@ private struct WeekStripView: View {
             Button(action: { store.shiftWeek(by: -1) }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(palette.textSecondary)
-                    .frame(width: 32, height: 54)
+                    .foregroundStyle(palette.textSecondary.opacity(0.9))
+                    .frame(width: 30, height: 52)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -301,11 +320,11 @@ private struct WeekStripView: View {
                         ZStack(alignment: .topLeading) {
                             if item.hasMarker {
                                 Circle()
-                                    .fill(Color(red: 0.96, green: 0.74, blue: 0.08))
-                                    .frame(width: 8, height: 8)
+                                    .fill(item.isSelected ? palette.accent : palette.textSecondary.opacity(0.55))
+                                    .frame(width: 5, height: 5)
                                     .frame(maxWidth: .infinity, alignment: .topTrailing)
-                                    .padding(.top, 6)
-                                    .padding(.trailing, 6)
+                                    .padding(.top, 7)
+                                    .padding(.trailing, 7)
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -313,25 +332,31 @@ private struct WeekStripView: View {
                                     .frame(height: 6)
 
                                 Text(item.weekdayTitle)
-                                    .font(.system(size: 17, weight: .medium))
+                                    .font(.system(size: 15, weight: .semibold))
                                     .frame(height: 22, alignment: .topLeading)
 
                                 Text(item.dayLabel)
-                                    .font(.system(size: 13, weight: .regular))
+                                    .font(.system(size: 12, weight: .medium))
                                     .frame(height: 16, alignment: .topLeading)
 
                                 Spacer(minLength: 0)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         }
-                        .foregroundStyle(item.isSelected ? palette.accent : palette.textPrimary.opacity(0.72))
-                        .frame(maxWidth: .infinity, minHeight: 54, maxHeight: 54, alignment: .topLeading)
+                        .foregroundStyle(item.isSelected ? palette.textPrimary : palette.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52, alignment: .topLeading)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(item.isSelected ? palette.panelStrong : Color.clear)
+                                .fill(item.isSelected ? palette.card : Color.clear)
                         )
+                        .overlay {
+                            if item.isSelected {
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                    .stroke(palette.divider, lineWidth: 0.8)
+                            }
+                        }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -343,14 +368,19 @@ private struct WeekStripView: View {
             Button(action: { store.shiftWeek(by: 1) }) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(palette.textSecondary)
-                    .frame(width: 32, height: 54)
+                    .foregroundStyle(palette.textSecondary.opacity(0.9))
+                    .frame(width: 30, height: 52)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("week-next-button")
         }
-        .background(palette.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(4)
+        .background(palette.panel.opacity(0.82), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(palette.divider, lineWidth: 0.8)
+        }
     }
 }
 
@@ -377,11 +407,11 @@ private struct HabitListView: View {
         .animation(.easeInOut(duration: 0.18), value: store.doneCount)
         .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.045), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(palette.divider, lineWidth: 0.8)
                 .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(palette.panelStrong)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(palette.panel.opacity(0.78))
                 )
         )
     }
@@ -409,15 +439,15 @@ private struct HabitRowView: View {
                 store.toggle(habit)
             } label: {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(store.isDone(habit) ? palette.success : Color.clear)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .stroke(
                                     store.isDone(habit)
                                         ? palette.success
-                                        : palette.textPrimary.opacity(0.92),
-                                    lineWidth: 1.8
+                                        : palette.textSecondary.opacity(0.72),
+                                    lineWidth: 1.5
                                 )
                         }
 
@@ -426,7 +456,7 @@ private struct HabitRowView: View {
                         .foregroundStyle(.white)
                         .opacity(store.isDone(habit) ? 1 : 0)
                 }
-                .frame(width: 28, height: 28)
+                .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -437,7 +467,7 @@ private struct HabitRowView: View {
             if store.editingHabitId == habit.id {
                 TextField("", text: $store.editingHabitText)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(palette.textPrimary)
                     .focused($isEditorFocused)
                     .accessibilityIdentifier("habit-editor-\(habit.id.uuidString)")
@@ -477,8 +507,8 @@ private struct HabitRowView: View {
                 .accessibilityIdentifier("habit-title-\(habit.id.uuidString)")
             }
         }
-        .padding(.horizontal, 22)
-        .frame(height: 54)
+        .padding(.horizontal, 20)
+        .frame(height: 52)
         .background(store.isDone(habit) ? palette.successSoft : Color.clear)
         .opacity(store.isDone(habit) ? 0.82 : 1)
         .contentShape(Rectangle())
@@ -556,11 +586,15 @@ private struct AddHabitBarView: View {
         HStack(spacing: 10) {
             TextField("从这一天起添加一个固定事项", text: $store.draftTitle)
                 .textFieldStyle(.plain)
-                .font(.system(size: 17, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(palette.textPrimary)
                 .padding(.horizontal, 15)
-                .frame(height: 42)
-                .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(height: 44)
+                .background(palette.panel.opacity(0.82), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(palette.divider, lineWidth: 0.8)
+                }
                 .accessibilityIdentifier("add-habit-input")
                 .onSubmit {
                     store.addHabit()
@@ -569,19 +603,23 @@ private struct AddHabitBarView: View {
             Button(action: store.addTodayOnlyHabit) {
                 Text("仅今天")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(palette.textPrimary)
-                    .frame(width: 58, height: 42)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .foregroundStyle(palette.textSecondary)
+                    .frame(width: 60, height: 44)
+                    .background(palette.panel.opacity(0.82), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .stroke(palette.divider, lineWidth: 0.8)
+                    }
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("add-today-habit-button")
 
             Button(action: store.addHabit) {
                 Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(palette.textPrimary)
-                    .frame(width: 48, height: 42)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 44)
+                    .background(palette.accentSoft, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("add-habit-button")
@@ -591,29 +629,180 @@ private struct AddHabitBarView: View {
 
 private struct OverviewPanelView: View {
     @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("今日") {
-                    Label("已完成 \(store.doneCount) 项", systemImage: "checkmark.circle")
-                    Label("待完成 \(store.pendingCount) 项", systemImage: "circle.dashed")
-                    Label(store.progressText, systemImage: "chart.bar")
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 21, weight: .semibold))
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 42, height: 42)
+                    .background(palette.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("总览")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(palette.textPrimary)
+
+                    Text("\(store.selectedDateTitle) · \(store.progressText) 完成")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
                 }
 
-                Section("本周") {
+                Spacer()
+            }
+
+            HStack(spacing: 10) {
+                OverviewStatCard(
+                    title: "已完成",
+                    value: "\(store.doneCount)",
+                    systemName: "checkmark",
+                    tint: palette.success
+                )
+
+                OverviewStatCard(
+                    title: "待完成",
+                    value: "\(store.pendingCount)",
+                    systemName: "circle.dashed",
+                    tint: palette.accent
+                )
+
+                OverviewStatCard(
+                    title: "完成率",
+                    value: store.progressText,
+                    systemName: "chart.bar.fill",
+                    tint: palette.accentSoft
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                sectionHeader("本周")
+
+                HStack(alignment: .center, spacing: 12) {
                     Text(store.weeklyCompletionSummary)
-                }
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(palette.textPrimary)
 
-                Section("提醒") {
-                    ForEach(store.reminders.prefix(3)) { reminder in
-                        Text("\(reminder.title) \(String(format: "%02d:%02d", reminder.hour, reminder.minute))")
+                    Spacer()
+
+                    Text("7 天视图")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(palette.textSecondary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(palette.panelStrong, in: Capsule())
+                }
+            }
+            .padding(14)
+            .background(palette.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(palette.divider, lineWidth: 0.8)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                sectionHeader("提醒")
+
+                if store.reminders.isEmpty {
+                    Text("还没有提醒")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(store.reminders.prefix(3).enumerated()), id: \.element.id) { index, reminder in
+                            HStack(spacing: 10) {
+                                Image(systemName: reminder.enabled ? "bell.fill" : "bell.slash")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(reminder.enabled ? palette.accent : palette.textSecondary)
+                                    .frame(width: 24, height: 24)
+                                    .background(
+                                        (reminder.enabled ? palette.accent.opacity(0.10) : palette.panelStrong),
+                                        in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    )
+
+                                Text(reminder.title)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(palette.textPrimary)
+                                    .lineLimit(1)
+
+                                Spacer()
+
+                                Text(String(format: "%02d:%02d", reminder.hour, reminder.minute))
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(palette.textSecondary)
+                            }
+                            .padding(.vertical, 9)
+
+                            if index < min(store.reminders.count, 3) - 1 {
+                                Divider()
+                                    .overlay(palette.divider)
+                            }
+                        }
                     }
                 }
             }
-            .navigationTitle("总览")
+            .padding(14)
+            .background(palette.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(palette.divider, lineWidth: 0.8)
+            }
         }
-        .frame(minWidth: 360, minHeight: 360)
+        .padding(22)
+        .background(
+            LinearGradient(
+                colors: [palette.backgroundTop, palette.backgroundBottom],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .frame(width: 430)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(palette.textSecondary)
+    }
+}
+
+private struct OverviewStatCard: View {
+    let title: String
+    let value: String
+    let systemName: String
+    let tint: Color
+    @EnvironmentObject private var store: HabitViewModel
+    private var palette: ThemePalette { .palette(for: store.theme) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 28, height: 28)
+                .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .foregroundStyle(palette.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(palette.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(13)
+        .background(palette.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(palette.divider, lineWidth: 0.8)
+        }
     }
 }
 
@@ -1050,7 +1239,7 @@ private struct IconButton: View {
                 .font(.system(size: symbolSize, weight: .medium))
                 .foregroundStyle(tint.opacity(0.82))
                 .frame(width: 20, height: 20)
-                .padding(4)
+                .padding(5)
                 .rotationEffect(highlighted && tiltWhenHighlighted ? .degrees(-20) : .degrees(0))
                 .offset(y: highlighted && tiltWhenHighlighted ? -0.5 : 0)
                 .animation(.spring(response: 0.22, dampingFraction: 0.72), value: highlighted)
