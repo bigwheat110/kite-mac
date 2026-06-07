@@ -55,12 +55,12 @@ final class ChecklistFlowUITests: XCTestCase {
 
         let editor = element("habit-editor-\(japaneseID)")
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        replaceText(in: editor, with: "德育")
+        replaceText(in: editor, with: "TodayOnly")
 
-        XCTAssertTrue(element(labeled: "德育").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "TodayOnly").waitForExistence(timeout: 5))
 
         app.buttons["week-next-button"].tap()
-        XCTAssertFalse(element(labeled: "德育").exists)
+        XCTAssertFalse(element(labeled: "TodayOnly").exists)
     }
 
     func testContextMenuTemplateRenameAffectsTodayAndFuture() throws {
@@ -74,14 +74,14 @@ final class ChecklistFlowUITests: XCTestCase {
 
         let editor = element("habit-editor-\(hairID)")
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        replaceText(in: editor, with: "政治")
+        replaceText(in: editor, with: "TemplateName")
 
-        XCTAssertTrue(element(labeled: "政治").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "TemplateName").waitForExistence(timeout: 5))
         app.buttons["week-next-button"].tap()
-        XCTAssertTrue(element(labeled: "政治").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "TemplateName").waitForExistence(timeout: 5))
         app.buttons["week-prev-button"].tap()
         app.buttons["week-prev-button"].tap()
-        XCTAssertFalse(element(labeled: "政治").exists)
+        XCTAssertFalse(element(labeled: "TemplateName").exists)
     }
 
     func testToggleCompletionMovesRowToBottomAndBack() throws {
@@ -105,10 +105,10 @@ final class ChecklistFlowUITests: XCTestCase {
         let input = app.textFields["add-habit-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
-        input.typeText("新事项")
+        input.typeText("NewItem")
         app.buttons["add-habit-button"].tap()
 
-        XCTAssertTrue(element(labeled: "新事项").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "NewItem").waitForExistence(timeout: 5))
 
         app.terminate()
         app = XCUIApplication()
@@ -116,6 +116,6 @@ final class ChecklistFlowUITests: XCTestCase {
         app.launch()
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
-        XCTAssertTrue(element(labeled: "新事项").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(labeled: "NewItem").waitForExistence(timeout: 5))
     }
 }
