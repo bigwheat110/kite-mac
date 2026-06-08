@@ -19,6 +19,9 @@
 - 默认不要主动运行 `xcodebuild test`。
 - UI 测试不应影响正式使用数据。
 - 如需运行测试，应优先使用独立测试数据，不要重置用户平时使用的数据。
+- Debug 运行数据必须和正式 Release 数据隔离，Debug 不得读写或污染正式 Release 的本地数据。
+- 当前约定：Debug 使用 `~/Library/Application Support/KiteNative-Debug/app-state.json`，Release 使用 `~/Library/Application Support/KiteNative/app-state.json`。
+- 需要迁移、复制、清理或重置正式 Release 数据时，必须先得到用户明确要求。
 
 ## 当前项目使用偏好
 

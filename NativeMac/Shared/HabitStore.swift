@@ -5,7 +5,11 @@ final class HabitStore {
 
     static let fileName = "app-state.json"
     static let uiTestFileName = "app-state-uitest.json"
+    #if DEBUG
+    static let appDirectoryName = "KiteNative-Debug"
+    #else
     static let appDirectoryName = "KiteNative"
+    #endif
     static let uiTestDirectoryName = "KiteNativeUITests"
 
     private let encoder = JSONEncoder()
