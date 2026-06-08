@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ThemePalette {
     let backgroundTop: Color
@@ -386,21 +387,13 @@ private struct WeekStripView: View {
 
 private struct HabitListView: View {
     @EnvironmentObject private var store: HabitViewModel
+    @State private var draggingHabitId: UUID?
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                habitSection(for: store.pendingHabits)
-
-                if !store.completedHabits.isEmpty && !store.pendingHabits.isEmpty {
-                    Divider()
-                        .overlay(Color.white.opacity(0.08))
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 4)
-                }
-
-                habitSection(for: store.completedHabits)
+                habitSection(for: store.orderedHabits)
             }
         }
         .animation(.easeInOut(duration: 0.18), value: store.orderedHabits.map(\.id))
@@ -421,7 +414,66 @@ private struct HabitListView: View {
         ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
             HabitRowView(habit: habit, isLast: index == habits.count - 1)
                 .environmentObject(store)
+                .opacity(draggingHabitId == habit.id ? 0.55 : 1)
+                .onDrag {
+                    draggingHabitId = habit.id
+                    return NSItemProvider(object: habit.id.uuidString as NSString)
+                } preview: {
+                    HabitDragPreview(title: store.title(for: habit), theme: store.theme)
+                }
+                .onDrop(
+                    of: [.text],
+                    delegate: HabitDropDelegate(
+                        targetHabit: habit,
+                        draggingHabitId: $draggingHabitId,
+                        store: store
+                    )
+                )
         }
+    }
+}
+
+private struct HabitDragPreview: View {
+    let title: String
+    let theme: AppTheme
+
+    private var palette: ThemePalette { .palette(for: theme) }
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(palette.textPrimary)
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(palette.panelStrong.opacity(0.94), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(palette.divider, lineWidth: 0.8)
+            }
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+    }
+}
+
+private struct HabitDropDelegate: DropDelegate {
+    let targetHabit: HabitItem
+    @Binding var draggingHabitId: UUID?
+    let store: HabitViewModel
+
+    func dropEntered(info: DropInfo) {
+        guard let draggingHabitId,
+              draggingHabitId != targetHabit.id
+        else { return }
+        store.moveVisibleHabit(draggingHabitId, over: targetHabit.id)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingHabitId = nil
+        return true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
     }
 }
 

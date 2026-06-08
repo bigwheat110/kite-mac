@@ -69,8 +69,6 @@ enum HabitDeleteMode: String {
 
 @MainActor
 final class HabitViewModel: ObservableObject {
-    private static let habitSortLocale = Locale(identifier: "zh_Hans")
-
     @Published var state: AppState
     @Published var selectedDate: Date
     @Published var draftTitle = ""
@@ -103,11 +101,6 @@ final class HabitViewModel: ObservableObject {
     var orderedHabits: [HabitItem] {
         let orderMap = Dictionary(uniqueKeysWithValues: state.habits.enumerated().map { ($1.id, $0) })
         return habits.sorted { lhs, rhs in
-            let lhsDone = isDone(lhs)
-            let rhsDone = isDone(rhs)
-            if lhsDone != rhsDone {
-                return !lhsDone && rhsDone
-            }
             return shouldSort(lhs, before: rhs, on: selectedDate, orderMap: orderMap)
         }
     }
@@ -256,6 +249,19 @@ final class HabitViewModel: ObservableObject {
         next.entries[dateKey] = day
         state = next
         persist()
+    }
+
+    func moveVisibleHabit(_ movingHabitId: UUID, over targetHabitId: UUID) {
+        var visibleIds = orderedHabits.map(\.id)
+        guard let sourceIndex = visibleIds.firstIndex(of: movingHabitId),
+              let targetIndex = visibleIds.firstIndex(of: targetHabitId),
+              sourceIndex != targetIndex
+        else { return }
+
+        let movedId = visibleIds.remove(at: sourceIndex)
+        let insertionIndex = targetIndex > sourceIndex ? targetIndex : targetIndex
+        visibleIds.insert(movedId, at: insertionIndex)
+        applyVisibleHabitOrder(visibleIds)
     }
 
     func addHabit() {
@@ -629,15 +635,24 @@ final class HabitViewModel: ObservableObject {
         on date: Date,
         orderMap: [UUID: Int]
     ) -> Bool {
-        let comparison = title(for: lhs, on: date).compare(
-            title(for: rhs, on: date),
-            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
-            locale: Self.habitSortLocale
-        )
-        if comparison != .orderedSame {
-            return comparison == .orderedAscending
-        }
         return (orderMap[lhs.id] ?? 0) < (orderMap[rhs.id] ?? 0)
+    }
+
+    private func applyVisibleHabitOrder(_ visibleIds: [UUID]) {
+        let visibleSet = Set(visibleIds)
+        let habitById = Dictionary(uniqueKeysWithValues: state.habits.map { ($0.id, $0) })
+        var remainingVisibleIds = visibleIds
+        var next = state
+
+        next.habits = state.habits.compactMap { habit in
+            guard visibleSet.contains(habit.id) else { return habit }
+            guard !remainingVisibleIds.isEmpty else { return habit }
+            let nextId = remainingVisibleIds.removeFirst()
+            return habitById[nextId]
+        }
+
+        state = next
+        persist()
     }
 
     private func habitApplies(_ habit: HabitItem, on date: Date) -> Bool {
