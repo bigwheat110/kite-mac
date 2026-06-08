@@ -13,6 +13,7 @@
 - 只有在用户明确要求“构建 / 测试 / 重启 / 提交 / 推送 / 打包”时，才执行对应步骤。
 - 如果用户只是让助手修改界面、逻辑或文案，默认只改代码，不额外做测试和提交流程。
 - 每次发布 release，都只把 `KiteNative.app` 发布到 `/Users/dyliu/Desktop/KiteNative-release/` 文件夹，不生成或保留 zip 包。
+- 用户要求构建或重启用于体验时，默认构建 Release 版本，并使用 `/Users/dyliu/Desktop/KiteNative-release/KiteNative.app`。
 
 ## 测试相关要求
 
