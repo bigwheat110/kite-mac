@@ -94,6 +94,11 @@ struct ChecklistView: View {
             case .reminders:
                 RemindersPanelView()
                     .environmentObject(store)
+            #if DEBUG
+            case .coreDataExperiment:
+                CoreDataExperimentPanelView()
+                    .environmentObject(store)
+            #endif
             }
         }
         .sheet(isPresented: $store.showingReminderEditor) {
@@ -204,6 +209,10 @@ private struct MainWindowClickDismissHandler: NSViewRepresentable {
             switch panel {
             case .overview, .calendar, .weekPlan:
                 return true
+            #if DEBUG
+            case .coreDataExperiment:
+                return false
+            #endif
             case .reminders, nil:
                 return false
             }
@@ -244,6 +253,9 @@ private struct HeaderBarView: View {
                 IconButton(systemName: "sparkles", action: store.openOverview, symbolSize: 16, tint: palette.textSecondary)
                 IconButton(systemName: "calendar", action: store.openCalendar, symbolSize: 15, tint: palette.textSecondary)
                 IconButton(systemName: "calendar.day.timeline.left", action: store.openWeekPlan, symbolSize: 15, tint: palette.textSecondary)
+                #if DEBUG
+                IconButton(systemName: "externaldrive.badge.icloud", action: store.openCoreDataExperiment, symbolSize: 15, tint: palette.accent)
+                #endif
                 IconButton(systemName: "rectangle.split.3x1", action: store.toggleDisplayMode, symbolSize: 15, tint: palette.textSecondary)
                 IconButton(
                     systemName: store.theme == .dark ? "circle.lefthalf.filled" : "circle.righthalf.filled",

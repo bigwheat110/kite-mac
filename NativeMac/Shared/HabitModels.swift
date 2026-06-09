@@ -296,6 +296,9 @@ enum ToolbarPanel: String, Identifiable {
     case calendar
     case weekPlan
     case reminders
+    #if DEBUG
+    case coreDataExperiment
+    #endif
 
     var id: String { rawValue }
 }

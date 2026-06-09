@@ -21,6 +21,7 @@
 - 新增 Core Data 模型草案
 - 将 v1 同步范围拆成实体
 - 在 Debug 数据中验证 `AppState` 到 Core Data 的映射
+- 当前实验说明见 `docs/sync/core-data-experiment.md`
 
 边界：
 

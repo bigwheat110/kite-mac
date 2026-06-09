@@ -448,6 +448,12 @@ final class HabitViewModel: ObservableObject {
         activePanel = .weekPlan
     }
 
+    #if DEBUG
+    func openCoreDataExperiment() {
+        activePanel = .coreDataExperiment
+    }
+    #endif
+
     func openReminders() {
         reminderDraft = ReminderDraft()
         showingReminderEditor = true
