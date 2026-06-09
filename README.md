@@ -12,3 +12,7 @@ Main entry points:
 - [NativeMac/KiteNative/KiteNativeApp.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/KiteNativeApp.swift)
 - [NativeMac/KiteNative/ChecklistView.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/ChecklistView.swift)
 - [NativeMac/KiteNative/HabitViewModel.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/HabitViewModel.swift)
+
+Planning docs:
+
+- [docs/sync/architecture.md](/Users/dyliu/Desktop/software/kite-mac/docs/sync/architecture.md)

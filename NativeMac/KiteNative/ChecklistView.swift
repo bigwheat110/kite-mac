@@ -54,6 +54,7 @@ struct ThemePalette {
 
 struct ChecklistView: View {
     @EnvironmentObject private var store: HabitViewModel
+    @Environment(\.scenePhase) private var scenePhase
     private var palette: ThemePalette { .palette(for: store.theme) }
 
     var body: some View {
@@ -119,6 +120,15 @@ struct ChecklistView: View {
         )
         .onAppear {
             store.applyWindowPreferences()
+            store.refreshTodayIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                store.refreshTodayIfNeeded()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            store.refreshTodayIfNeeded()
         }
     }
 }

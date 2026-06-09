@@ -80,12 +80,15 @@ final class HabitViewModel: ObservableObject {
     @Published var editingHabitText = ""
     @Published var editingMode: HabitEditMode = .todayOnly
     @Published var repeatDraft: HabitRepeatDraft?
+    @Published private var currentToday: Date
 
     init() {
         let loaded = HabitStore.shared.load()
         let normalized = Self.normalize(loaded)
+        let today = HabitDate.startOfDay(.now)
         state = normalized.state
-        selectedDate = HabitDate.startOfDay(.now)
+        currentToday = today
+        selectedDate = today
         if normalized.didChange {
             persist()
         }
@@ -142,7 +145,7 @@ final class HabitViewModel: ObservableObject {
             return WeekDayItem(
                 date: date,
                 isSelected: HabitDate.startOfDay(date) == HabitDate.startOfDay(selectedDate),
-                isToday: HabitDate.isToday(date),
+                isToday: HabitDate.startOfDay(date) == currentToday,
                 completionCount: completion,
                 hasMarker: hasReminder || completion > 0
             )
@@ -176,7 +179,7 @@ final class HabitViewModel: ObservableObject {
                 date: date,
                 isCurrentMonth: HabitDate.isInSameMonth(date, as: monthAnchor),
                 isSelected: HabitDate.startOfDay(date) == HabitDate.startOfDay(selectedDate),
-                isToday: HabitDate.isToday(date),
+                isToday: HabitDate.startOfDay(date) == currentToday,
                 completionCount: completion,
                 totalCount: dayHabits.count,
                 pendingSummary: pendingSummary
@@ -240,6 +243,17 @@ final class HabitViewModel: ObservableObject {
 
     func jumpToToday() {
         select(date: .now)
+    }
+
+    func refreshTodayIfNeeded() {
+        let previousToday = currentToday
+        let today = HabitDate.startOfDay(.now)
+        guard today != previousToday else { return }
+
+        currentToday = today
+        if HabitDate.startOfDay(selectedDate) == previousToday {
+            select(date: today)
+        }
     }
 
     func toggle(_ habit: HabitItem) {
