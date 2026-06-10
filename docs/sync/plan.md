@@ -81,13 +81,16 @@
 - 已新增 `HabitCoreDataStack.makeCloudKitContainer(storeURL:)`
 - 已新增 `HabitSyncStoreFactory` / `HabitSyncStoreMode`，默认仍创建本地 Core Data store
 - 已新增 CloudKit 试运行启动参数：`--kite-sync-cloudkit`
+- 已新增 Mac 主 UI 同步库入口：本地试运行可用 `--kite-use-sync-store`，CloudKit 模式会自动进入主同步库
+- 已新增 Mac 主同步库启动播种参数：`--kite-import-release-state`
 
 边界：
 
 - 尚未选择 Apple Developer Team
 - 尚未在真机/模拟器验证 iCloud 登录状态
-- 默认不带启动参数时，Mac/iOS 仍使用本地 Core Data store
-- 只有带 `--kite-sync-cloudkit` 时才尝试 CloudKit-backed store
+- 默认不带启动参数时，Mac 仍使用 JSON，iOS 仍使用本地 Core Data store
+- Mac 带 `--kite-use-sync-store` 或当前同步模式为 CloudKit 时才让主 UI 读写共享 Core Data store
+- 只有带 `--kite-sync-cloudkit` 或同步模式偏好设为 CloudKit 时才尝试 CloudKit-backed store
 - CloudKit 试运行 store 使用独立目录，目录名追加 `-CloudKit`
 - Mac Debug Core Data 实验面板跟随同一个启动参数和 store mode
 - Mac Debug Core Data 实验面板已提供只读 iCloud 账号状态检查
@@ -107,10 +110,12 @@
 
 - 已新增 `KiteIOS` target
 - 已新增 iOS SwiftUI 页面
+- 已新增 iOS AppIcon asset catalog，并由 XcodeGen 写入 target resources
 - 当前页面复用 `HabitModels`、`HabitSyncModels`、`HabitCoreDataStack` 和 `HabitCoreDataStore`
 - 当前 iOS 页面已通过 `HabitCoreDataStore` 读取 iOS 本地 Core Data store
 - 只读阶段已越过，iOS 已开始支持本地编辑
-- 当前 iOS 页面尚未接 CloudKit，因此不会自动读取 Mac 正式 JSON 数据
+- 当前 iOS 页面已有 CloudKit-backed store 入口；在 CloudKit 试运行模式下，可读取 Mac `导入主同步库` 后播种的数据
+- 尚未完成真实 Mac/iOS 多设备同步验证
 
 ## 阶段 6：iOS 双向编辑
 
@@ -128,12 +133,15 @@
 - iOS 已支持长按菜单：仅选中日改名、从选中日起改名、仅选中日隐藏、从选中日起删除
 - iOS 已支持重复规则：每天、工作日、周末、自定义周几
 - iOS 已支持拖动排序
-- iOS 空状态已支持手动添加默认习惯
+- iOS 空状态已支持手动补齐缺失默认习惯，不覆盖已有同步库数据
 - iOS 已新增同步状态页，显示本地/CloudKit 模式、iCloud 账号状态和最近刷新时间
 - iOS 同步状态页已显示模式说明、实际 SQLite 路径和 CloudKit 试运行启动参数提示
 - iOS 同步状态页已新增 CloudKit 同步事件诊断，用于观察系统导入/导出/失败事件
 - iOS 在 CloudKit 导入完成事件后会自动刷新当前日期快照
-- 当前写入的是 iOS 本地 Core Data store
+- 当前默认写入的是 iOS 本地 Core Data store；CloudKit 模式下写入 CloudKit-backed store
+- Mac 主 UI 已有显式同步库模式，带 `--kite-use-sync-store` 时常用习惯写操作会写入共享 Core Data store
+- Mac 可带 `--kite-import-release-state` 启动，把正式 Release JSON 复制到主同步库
+- Mac 主 UI 在同步库 + CloudKit 模式下会监听 CloudKit 导入完成并刷新本地状态
 - 尚未验证 Mac/iOS CloudKit 双向同步
 - Mac/iOS 都已接入 iCloud 账号状态检查和 CloudKit 同步事件诊断
-- Mac/iOS 在 CloudKit 导入完成事件后都会重读本地 Core Data 数据
+- Mac 主同步库、Mac Debug 试运行库和 iOS 在 CloudKit 导入完成事件后都会重读本地 Core Data 数据

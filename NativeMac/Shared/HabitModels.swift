@@ -1,5 +1,21 @@
 import Foundation
 
+enum HabitTitle {
+    static func duplicateKey(_ title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        var normalized = ""
+        for scalar in trimmed.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .control, .format, .surrogate, .unassigned:
+                continue
+            default:
+                normalized.unicodeScalars.append(scalar)
+            }
+        }
+        return normalized.precomposedStringWithCanonicalMapping
+    }
+}
+
 enum HabitRepeatKind: String, Codable, Hashable {
     case daily
     case weekdays
@@ -16,7 +32,20 @@ struct HabitRepeatRule: Codable, Hashable {
     static let weekends = HabitRepeatRule(kind: .weekends, weekdays: [])
 
     static func custom(_ weekdays: [Int]) -> HabitRepeatRule {
-        HabitRepeatRule(kind: .custom, weekdays: weekdays)
+        HabitRepeatRule(kind: .custom, weekdays: normalizedWeekdays(weekdays))
+    }
+
+    static func normalizedWeekdays(_ weekdays: [Int]) -> [Int] {
+        Array(Set(weekdays.filter { (1...7).contains($0) })).sorted()
+    }
+
+    func normalized(fallbackWeekday: Int? = nil) -> HabitRepeatRule {
+        guard kind == .custom else { return self }
+        let normalized = Self.normalizedWeekdays(weekdays)
+        if normalized.isEmpty, let fallbackWeekday {
+            return .custom([fallbackWeekday])
+        }
+        return normalized.isEmpty ? .daily : .custom(normalized)
     }
 
     var title: String {

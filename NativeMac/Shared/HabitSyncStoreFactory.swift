@@ -5,9 +5,8 @@ enum HabitSyncStoreMode {
     case cloudKit
 
     static let cloudKitLaunchArgument = "--kite-sync-cloudkit"
-    #if DEBUG
-    static let debugPreferenceKey = "KiteDebugSyncStoreMode"
-    #endif
+    static let preferenceKey = "KiteSyncStoreMode"
+    static let legacyDebugPreferenceKey = "KiteDebugSyncStoreMode"
 
     static let current: HabitSyncStoreMode = fromLaunchArguments()
 
@@ -15,31 +14,38 @@ enum HabitSyncStoreMode {
         if arguments.contains(cloudKitLaunchArgument) {
             return .cloudKit
         }
-        #if DEBUG
-        if let preferred = debugPreference {
+        if let preferred = preference {
             return preferred
         }
-        #endif
         return .local
     }
 
-    #if DEBUG
-    static var debugPreference: HabitSyncStoreMode? {
+    static var preference: HabitSyncStoreMode? {
         get {
-            guard let rawValue = UserDefaults.standard.string(forKey: debugPreferenceKey) else {
-                return nil
+            if let rawValue = UserDefaults.standard.string(forKey: preferenceKey) {
+                return HabitSyncStoreMode(rawValue: rawValue)
             }
-            return HabitSyncStoreMode(rawValue: rawValue)
+            if let legacyRawValue = UserDefaults.standard.string(forKey: legacyDebugPreferenceKey),
+               let legacyValue = HabitSyncStoreMode(rawValue: legacyRawValue) {
+                UserDefaults.standard.set(legacyValue.rawValue, forKey: preferenceKey)
+                UserDefaults.standard.removeObject(forKey: legacyDebugPreferenceKey)
+                return legacyValue
+            }
+            return nil
         }
         set {
             if let newValue {
-                UserDefaults.standard.set(newValue.rawValue, forKey: debugPreferenceKey)
+                UserDefaults.standard.set(newValue.rawValue, forKey: preferenceKey)
             } else {
-                UserDefaults.standard.removeObject(forKey: debugPreferenceKey)
+                UserDefaults.standard.removeObject(forKey: preferenceKey)
             }
+            UserDefaults.standard.removeObject(forKey: legacyDebugPreferenceKey)
         }
     }
-    #endif
+
+    static var preferredOrCurrent: HabitSyncStoreMode {
+        preference ?? current
+    }
 
     var title: String {
         switch self {
@@ -66,6 +72,38 @@ enum HabitSyncStoreMode {
         case .cloudKit:
             return .cloudKit
         }
+    }
+}
+
+enum HabitMacSyncStoreConfig {
+    static let useSyncStoreLaunchArgument = "--kite-use-sync-store"
+    static let importReleaseStateLaunchArgument = "--kite-import-release-state"
+    static let directoryName = "KiteNative-SyncCoreData"
+    static let storeFileName = "kite-sync-core-data.sqlite"
+
+    static var usesSyncStore: Bool {
+        ProcessInfo.processInfo.arguments.contains(useSyncStoreLaunchArgument)
+            || HabitSyncStoreMode.current == .cloudKit
+    }
+
+    static var shouldImportReleaseState: Bool {
+        ProcessInfo.processInfo.arguments.contains(importReleaseStateLaunchArgument)
+    }
+
+    static func makeStore(mode: HabitSyncStoreMode = HabitSyncStoreMode.current) -> HabitCoreDataStore {
+        HabitSyncStoreFactory.makeStore(
+            directoryName: directoryName,
+            fileName: storeFileName,
+            mode: mode
+        )
+    }
+
+    static func storeURL(mode: HabitSyncStoreMode = HabitSyncStoreMode.current) -> URL {
+        HabitSyncStoreFactory.storeURL(
+            directoryName: directoryName,
+            fileName: storeFileName,
+            mode: mode
+        )
     }
 }
 

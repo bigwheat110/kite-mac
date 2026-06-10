@@ -52,6 +52,8 @@ targets:
     platform: iOS
     sources:
       - path: KiteIOS
+        excludes:
+          - Info.plist
       - path: Shared/HabitModels.swift
       - path: Shared/HabitSyncModels.swift
       - path: Shared/HabitSyncStoreFactory.swift
@@ -62,11 +64,15 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kiteios
         PRODUCT_NAME: KiteIOS
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Kite
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: KiteIOS/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: 1
         CODE_SIGN_ENTITLEMENTS: KiteIOS/KiteIOS.entitlements
+        APS_ENVIRONMENT: development
+      configs:
+        Release:
+          APS_ENVIRONMENT: production
   KiteWidgetExtension:
     type: app-extension
     platform: macOS

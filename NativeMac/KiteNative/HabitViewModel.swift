@@ -69,6 +69,11 @@ enum HabitDeleteMode: String {
 
 @MainActor
 final class HabitViewModel: ObservableObject {
+    private enum DataSource {
+        case json
+        case syncStore
+    }
+
     @Published var state: AppState
     @Published var selectedDate: Date
     @Published var draftTitle = ""
@@ -81,20 +86,54 @@ final class HabitViewModel: ObservableObject {
     @Published var editingMode: HabitEditMode = .todayOnly
     @Published var repeatDraft: HabitRepeatDraft?
     @Published private var currentToday: Date
+    private let dataSource: DataSource
+    private var cloudKitSyncMonitor: HabitCloudKitSyncMonitor?
     #if DEBUG
     @Published var usesCoreDataTrial = false
     #endif
 
     init() {
-        let loaded = HabitStore.shared.load()
+        let dataSource: DataSource = HabitMacSyncStoreConfig.usesSyncStore ? .syncStore : .json
+        self.dataSource = dataSource
+        let loaded: AppState
+        var initialStatusMessage: String?
+        switch dataSource {
+        case .json:
+            loaded = HabitStore.shared.load()
+            initialStatusMessage = HabitMacSyncStoreConfig.shouldImportReleaseState
+                ? "需进入 iCloud 模式或使用 \(HabitMacSyncStoreConfig.useSyncStoreLaunchArgument) 才会导入正式数据到同步库"
+                : nil
+        case .syncStore:
+            if HabitMacSyncStoreConfig.shouldImportReleaseState {
+                do {
+                    let summary = try HabitMacSyncStoreBootstrap.importReleaseState()
+                    initialStatusMessage = "已导入正式数据到同步库：\(summary.habitCount) 个习惯"
+                } catch {
+                    initialStatusMessage = "正式数据导入同步库失败: \(error)"
+                }
+            } else {
+                initialStatusMessage = nil
+            }
+            do {
+                loaded = try Self.syncStoreStateWithLocalFields()
+            } catch {
+                loaded = .default
+                let loadMessage = "同步数据源读取失败，已显示默认数据"
+                initialStatusMessage = [initialStatusMessage, loadMessage]
+                    .compactMap { $0 }
+                    .joined(separator: "；")
+            }
+        }
         let normalized = Self.normalize(loaded)
         let today = HabitDate.startOfDay(.now)
         state = normalized.state
         currentToday = today
         selectedDate = today
+        statusMessage = initialStatusMessage
         if normalized.didChange {
-            persist()
+            persistNormalizedState()
         }
+        configureCloudKitSyncMonitorIfNeeded()
     }
 
     var habits: [HabitItem] { habits(on: selectedDate) }
@@ -250,6 +289,12 @@ final class HabitViewModel: ObservableObject {
     }
 
     func toggle(_ habit: HabitItem) {
+        if dataSource == .syncStore {
+            performSyncStoreWrite("打卡失败") {
+                try Self.syncStore().toggleDone(habitID: habit.id, on: selectedDate)
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             performCoreDataTrialWrite("打卡失败") {
@@ -295,6 +340,20 @@ final class HabitViewModel: ObservableObject {
             statusMessage = "今天已有同名事项"
             return
         }
+        if dataSource == .syncStore {
+            let didWrite = performSyncStoreWrite(scope == .todayOnly ? "仅今天新增失败" : "新增模板失败") {
+                try Self.syncStore().addHabit(
+                    title: trimmed,
+                    startDate: selectedDate,
+                    todayOnly: scope == .todayOnly
+                )
+            }
+            if didWrite {
+                draftTitle = ""
+                statusMessage = scope == .todayOnly ? "仅今天已新增" : "已加入模板，从这一天起生效"
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             let didWrite = performCoreDataTrialWrite(scope == .todayOnly ? "仅今天新增失败" : "新增模板失败") {
@@ -327,6 +386,12 @@ final class HabitViewModel: ObservableObject {
     }
 
     func removeHabit(_ habit: HabitItem) {
+        if dataSource == .syncStore {
+            performSyncStoreWrite("删除失败") {
+                try Self.syncStore().deleteHabit(habitID: habit.id)
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             performCoreDataTrialWrite("删除失败") {
@@ -354,6 +419,15 @@ final class HabitViewModel: ObservableObject {
     }
 
     func hideHabitToday(_ habit: HabitItem) {
+        if dataSource == .syncStore {
+            let didWrite = performSyncStoreWrite("隐藏失败") {
+                try Self.syncStore().hideHabitForDay(habitID: habit.id, on: selectedDate)
+            }
+            if didWrite {
+                statusMessage = "仅今天已隐藏"
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             let didWrite = performCoreDataTrialWrite("隐藏失败") {
@@ -378,6 +452,15 @@ final class HabitViewModel: ObservableObject {
     }
 
     func removeHabitFromSelectedDate(_ habit: HabitItem) {
+        if dataSource == .syncStore {
+            let didWrite = performSyncStoreWrite("从这一天起删除失败") {
+                try Self.syncStore().endHabitFromDate(habitID: habit.id, from: selectedDate)
+            }
+            if didWrite {
+                statusMessage = "已从这一天起删除"
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             let didWrite = performCoreDataTrialWrite("从这一天起删除失败") {
@@ -401,6 +484,16 @@ final class HabitViewModel: ObservableObject {
     }
 
     func setRepeatRule(_ rule: HabitRepeatRule, for habit: HabitItem) {
+        if dataSource == .syncStore {
+            let normalized = normalizedRepeatRule(rule)
+            let didWrite = performSyncStoreWrite("重复规则保存失败") {
+                try Self.syncStore().updateRepeatRule(habitID: habit.id, rule: normalized)
+            }
+            if didWrite {
+                statusMessage = "重复规则已设为\(normalized.title)"
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             let normalized = normalizedRepeatRule(rule)
@@ -429,7 +522,7 @@ final class HabitViewModel: ObservableObject {
         } else {
             weekdays = [HabitDate.calendar.component(.weekday, from: selectedDate)]
         }
-        repeatDraft = HabitRepeatDraft(habitId: habit.id, weekdays: Self.normalizedWeekdays(weekdays))
+        repeatDraft = HabitRepeatDraft(habitId: habit.id, weekdays: HabitRepeatRule.normalizedWeekdays(weekdays))
     }
 
     func toggleRepeatDraftWeekday(_ weekday: Int) {
@@ -446,9 +539,20 @@ final class HabitViewModel: ObservableObject {
         guard let draft = repeatDraft,
               let index = state.habits.firstIndex(where: { $0.id == draft.habitId })
         else { return }
-        let weekdays = Self.normalizedWeekdays(draft.weekdays)
+        let weekdays = HabitRepeatRule.normalizedWeekdays(draft.weekdays)
         guard !weekdays.isEmpty else {
             statusMessage = "至少选择一天"
+            return
+        }
+        if dataSource == .syncStore {
+            let rule = HabitRepeatRule.custom(weekdays)
+            let didWrite = performSyncStoreWrite("重复规则保存失败") {
+                try Self.syncStore().updateRepeatRule(habitID: draft.habitId, rule: rule)
+            }
+            if didWrite {
+                repeatDraft = nil
+                statusMessage = "重复规则已设为\(rule.title)"
+            }
             return
         }
         #if DEBUG
@@ -561,6 +665,18 @@ final class HabitViewModel: ObservableObject {
     }
     #endif
 
+    func reloadSyncStoreIfNeeded(showsStatus: Bool = true) {
+        guard dataSource == .syncStore else { return }
+        do {
+            state = try Self.syncStoreStateWithLocalFields()
+            if showsStatus {
+                statusMessage = "已刷新同步数据"
+            }
+        } catch {
+            statusMessage = "同步数据刷新失败: \(error)"
+        }
+    }
+
     func openReminders() {
         reminderDraft = ReminderDraft()
         showingReminderEditor = true
@@ -595,6 +711,16 @@ final class HabitViewModel: ObservableObject {
 
         switch editingMode {
         case .todayOnly:
+            if dataSource == .syncStore {
+                let didWrite = performSyncStoreWrite("仅今天改名失败") {
+                    try Self.syncStore().renameHabitForDay(habitID: habit.id, title: trimmed, on: selectedDate)
+                }
+                if didWrite {
+                    statusMessage = "仅今天已改名"
+                    cancelEdit()
+                }
+                return
+            }
             #if DEBUG
             if usesCoreDataTrial {
                 let didWrite = performCoreDataTrialWrite("仅今天改名失败") {
@@ -613,6 +739,16 @@ final class HabitViewModel: ObservableObject {
             next.dailyOverrides[dateKey] = overrides
             statusMessage = "仅今天已改名"
         case .templateFromToday:
+            if dataSource == .syncStore {
+                let didWrite = performSyncStoreWrite("模板改名失败") {
+                    try Self.syncStore().renameHabitFromDate(habitID: habit.id, title: trimmed, from: selectedDate)
+                }
+                if didWrite {
+                    statusMessage = "模板名已更新，从这一天起生效"
+                    cancelEdit()
+                }
+                return
+            }
             #if DEBUG
             if usesCoreDataTrial {
                 let didWrite = performCoreDataTrialWrite("模板改名失败") {
@@ -771,7 +907,21 @@ final class HabitViewModel: ObservableObject {
         #if DEBUG
         guard !usesCoreDataTrial else { return }
         #endif
-        HabitStore.shared.save(state)
+        switch dataSource {
+        case .json:
+            HabitStore.shared.save(state)
+        case .syncStore:
+            Self.saveLocalFields(from: state)
+        }
+    }
+
+    private func persistNormalizedState() {
+        switch dataSource {
+        case .json:
+            persist()
+        case .syncStore:
+            break
+        }
     }
 
     private func habits(on date: Date) -> [HabitItem] {
@@ -795,6 +945,12 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func applyVisibleHabitOrder(_ visibleIds: [UUID]) {
+        if dataSource == .syncStore {
+            performSyncStoreWrite("排序保存失败") {
+                try Self.syncStore().reorderHabits(orderedIDs: visibleIds)
+            }
+            return
+        }
         #if DEBUG
         if usesCoreDataTrial {
             performCoreDataTrialWrite("排序保存失败") {
@@ -821,18 +977,7 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func normalizedRepeatRule(_ rule: HabitRepeatRule) -> HabitRepeatRule {
-        if rule.kind == .custom {
-            let weekdays = Self.normalizedWeekdays(rule.weekdays)
-            if weekdays.isEmpty {
-                return .custom([HabitDate.calendar.component(.weekday, from: selectedDate)])
-            }
-            return .custom(weekdays)
-        }
-        return rule
-    }
-
-    private static func normalizedWeekdays(_ weekdays: [Int]) -> [Int] {
-        Array(Set(weekdays.filter { (1...7).contains($0) })).sorted()
+        rule.normalized(fallbackWeekday: HabitDate.calendar.component(.weekday, from: selectedDate))
     }
 
     private func hasVisibleHabit(named name: String, excluding excludedId: UUID?, on date: Date) -> Bool {
@@ -875,7 +1020,7 @@ final class HabitViewModel: ObservableObject {
 
     private static func normalizedRuleForStoredHabit(_ rule: HabitRepeatRule) -> HabitRepeatRule {
         if rule.kind == .custom {
-            let weekdays = normalizedWeekdays(rule.weekdays)
+            let weekdays = HabitRepeatRule.normalizedWeekdays(rule.weekdays)
             return weekdays.isEmpty ? .daily : .custom(weekdays)
         }
         return rule
@@ -940,17 +1085,64 @@ final class HabitViewModel: ObservableObject {
     }
 
     private static func duplicateTitleKey(_ title: String) -> String {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        var normalized = ""
-        for scalar in trimmed.unicodeScalars {
-            switch scalar.properties.generalCategory {
-            case .control, .format, .surrogate, .unassigned:
-                continue
-            default:
-                normalized.unicodeScalars.append(scalar)
+        HabitTitle.duplicateKey(title)
+    }
+
+    private static func syncStore() -> HabitCoreDataStore {
+        HabitMacSyncStoreConfig.makeStore()
+    }
+
+    private static func syncStoreStateWithLocalFields() throws -> AppState {
+        var syncState = try syncStore().loadAppState()
+        let localState = HabitStore.shared.load()
+        syncState.reminders = localState.reminders
+        syncState.uiPreferences = localState.uiPreferences
+        syncState.focusSession = localState.focusSession
+        return syncState
+    }
+
+    private static func saveLocalFields(from state: AppState) {
+        var localState = HabitStore.shared.load()
+        localState.reminders = state.reminders
+        localState.uiPreferences = state.uiPreferences
+        localState.focusSession = state.focusSession
+        HabitStore.shared.save(localState)
+    }
+
+    private func configureCloudKitSyncMonitorIfNeeded() {
+        guard dataSource == .syncStore,
+              HabitSyncStoreMode.current == .cloudKit
+        else {
+            return
+        }
+
+        let monitor = HabitCloudKitSyncMonitor { [weak self] summary in
+            Task { @MainActor in
+                guard let self else { return }
+                if summary.shouldReloadLocalData {
+                    self.reloadSyncStoreIfNeeded()
+                } else {
+                    self.statusMessage = summary.text
+                }
             }
         }
-        return normalized.precomposedStringWithCanonicalMapping
+        monitor.start()
+        cloudKitSyncMonitor = monitor
+    }
+
+    @discardableResult
+    private func performSyncStoreWrite(
+        _ failureMessage: String,
+        operation: () throws -> Void
+    ) -> Bool {
+        do {
+            try operation()
+            state = try Self.syncStoreStateWithLocalFields()
+            return true
+        } catch {
+            statusMessage = "\(failureMessage): \(error)"
+            return false
+        }
     }
 
     #if DEBUG

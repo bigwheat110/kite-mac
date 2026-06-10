@@ -1,18 +1,24 @@
-# Kite Mac
+# Kite Apple Apps
 
-This project now keeps only the native macOS implementation:
+This repository contains the native Apple implementation of Kite:
 
-- `SwiftUI + AppKit` main app
-- `WidgetKit` extension scaffold
-- local-only data storage
+- macOS app: `NativeMac/KiteNative`
+- iPhone app target: `NativeMac/KiteIOS`
+- shared habit/Core Data/CloudKit code: `NativeMac/Shared`
+- XcodeGen spec: `NativeMac/project.yml`
 
-Main entry points:
+The Mac app's default production data source is still the local JSON file. The iOS app and the Mac sync mode use shared Core Data models, with CloudKit-backed stores available through `iCloud.cn.kitlib.kite`.
 
-- [NativeMac/project.yml](/Users/dyliu/Desktop/software/kite-mac/NativeMac/project.yml)
-- [NativeMac/KiteNative/KiteNativeApp.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/KiteNativeApp.swift)
-- [NativeMac/KiteNative/ChecklistView.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/ChecklistView.swift)
-- [NativeMac/KiteNative/HabitViewModel.swift](/Users/dyliu/Desktop/software/kite-mac/NativeMac/KiteNative/HabitViewModel.swift)
+Before signing or device verification, run:
 
-Planning docs:
+```bash
+bash scripts/verify-cloudkit-config.sh
+```
 
-- [docs/sync/architecture.md](/Users/dyliu/Desktop/software/kite-mac/docs/sync/architecture.md)
+CloudKit verification still requires Apple Developer signing, a confirmed CloudKit container, and real Mac/iOS runtime testing with the same iCloud account.
+
+More detail:
+
+- [NativeMac/README.md](NativeMac/README.md)
+- [docs/sync/architecture.md](docs/sync/architecture.md)
+- [docs/sync/cloudkit-verification.md](docs/sync/cloudkit-verification.md)

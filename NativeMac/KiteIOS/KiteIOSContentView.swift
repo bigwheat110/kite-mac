@@ -6,6 +6,7 @@ private enum KiteIOSRenameMode {
 }
 
 struct KiteIOSContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = KiteIOSViewModel()
     @State private var renamingHabit: HabitDaySnapshotItem?
     @State private var renameText = ""
@@ -13,39 +14,16 @@ struct KiteIOSContentView: View {
     @State private var customRepeatHabit: HabitDaySnapshotItem?
     @State private var selectedRepeatWeekdays: Set<Int> = []
     @State private var showingSyncSettings = false
+    @State private var habitPendingDeleteFromDate: HabitDaySnapshotItem?
+    @State private var habitPendingDeleteEverywhere: HabitDaySnapshotItem?
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    HStack {
-                        Button {
-                            viewModel.shiftDay(by: -1)
-                        } label: {
-                            Image(systemName: "chevron.left")
-                        }
+                    dateHeader
 
-                        Spacer()
-
-                        VStack(spacing: 3) {
-                            Text(viewModel.dateTitle)
-                                .font(.headline)
-                            if !viewModel.isSelectedDateToday {
-                                Button("回到今天") {
-                                    viewModel.jumpToToday()
-                                }
-                                .font(.caption.weight(.semibold))
-                            }
-                        }
-
-                        Spacer()
-
-                        Button {
-                            viewModel.shiftDay(by: 1)
-                        } label: {
-                            Image(systemName: "chevron.right")
-                        }
-                    }
+                    weekStrip
                 }
 
                 Section {
@@ -76,7 +54,7 @@ struct KiteIOSContentView: View {
 
                 Section {
                     if let loadMessage = viewModel.loadMessage {
-                        Label(loadMessage, systemImage: "exclamationmark.triangle")
+                        Label(loadMessage, systemImage: "info.circle")
                             .foregroundStyle(.secondary)
                     }
 
@@ -157,9 +135,15 @@ struct KiteIOSContentView: View {
                                 }
 
                                 Button(role: .destructive) {
-                                    viewModel.deleteFromToday(habit)
+                                    habitPendingDeleteFromDate = habit
                                 } label: {
                                     Label("从选中日起删除", systemImage: "trash")
+                                }
+
+                                Button(role: .destructive) {
+                                    habitPendingDeleteEverywhere = habit
+                                } label: {
+                                    Label("彻底删除", systemImage: "trash.slash")
                                 }
                             }
                         }
@@ -259,6 +243,98 @@ struct KiteIOSContentView: View {
                     }
                 }
                 .presentationDetents([.height(180)])
+            }
+            .confirmationDialog("从选中日起删除？", item: $habitPendingDeleteFromDate) { habit in
+                Button("从选中日起删除", role: .destructive) {
+                    viewModel.deleteFromToday(habit)
+                }
+                Button("取消", role: .cancel) { }
+            } message: { habit in
+                Text("“\(habit.title)” 会从选中日之后不再出现。")
+            }
+            .confirmationDialog("彻底删除？", item: $habitPendingDeleteEverywhere) { habit in
+                Button("彻底删除", role: .destructive) {
+                    viewModel.deleteEverywhere(habit)
+                }
+                Button("取消", role: .cancel) { }
+            } message: { habit in
+                Text("“\(habit.title)” 和它的打卡、改名、隐藏记录都会从同步库删除。")
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    viewModel.reload()
+                }
+            }
+        }
+    }
+
+    private var dateHeader: some View {
+        HStack {
+            Button {
+                viewModel.shiftDay(by: -1)
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+
+            Spacer()
+
+            VStack(spacing: 3) {
+                Text(viewModel.dateTitle)
+                    .font(.headline)
+                if !viewModel.isSelectedDateToday {
+                    Button("回到今天") {
+                        viewModel.jumpToToday()
+                    }
+                    .font(.caption.weight(.semibold))
+                }
+            }
+
+            Spacer()
+
+            Button {
+                viewModel.shiftDay(by: 1)
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+        }
+    }
+
+    private var weekStrip: some View {
+        HStack(spacing: 6) {
+            ForEach(viewModel.weekItems) { item in
+                Button {
+                    viewModel.select(date: item.date)
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(item.weekdayTitle)
+                            .font(.caption2.weight(.semibold))
+                        Text(item.dayLabel)
+                            .font(.caption2)
+                        Text(item.countText)
+                            .font(.caption2.monospacedDigit().weight(.medium))
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 58)
+                    .foregroundStyle(item.isSelected ? Color.accentColor : .secondary)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(item.isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if item.hasProgress {
+                            Circle()
+                                .fill(item.isSelected ? Color.accentColor : Color.secondary.opacity(0.5))
+                                .frame(width: 5, height: 5)
+                                .padding(6)
+                        }
+                    }
+                    .overlay {
+                        if item.isToday {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.accentColor.opacity(item.isSelected ? 0.55 : 0.25), lineWidth: 1)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
             }
         }
     }

@@ -76,30 +76,45 @@ Kite 当前是结构化 App 状态，包含习惯、打卡、每日覆盖和隐�
 
 - macOS entitlement: `NativeMac/KiteNative/KiteNative.entitlements`
 - iOS entitlement: `NativeMac/KiteIOS/KiteIOS.entitlements`
+- iOS entitlements: 包含 `aps-environment`，由 `APS_ENVIRONMENT` 在 Debug / Release 中分别展开为 `development` / `production`
+- iOS Info.plist: `NativeMac/KiteIOS/Info.plist`，包含 `UIBackgroundModes` / `remote-notification`
 - `HabitCoreDataStack.makeLocalContainer(storeURL:)`
 - `HabitCoreDataStack.makeCloudKitContainer(storeURL:)`
+- Core Data container 会按 store mode 和 SQLite 路径在进程内复用，避免 CloudKit 事件监听、设置页诊断和页面刷新反复创建 persistent store
 - `HabitSyncStoreFactory`，用于在本地 Core Data 和 CloudKit-backed Core Data 之间切换
 - 启动参数 `--kite-sync-cloudkit`，用于手动进入 CloudKit-backed 试运行模式
+- 启动参数 `--kite-use-sync-store`，用于让 Mac 主 UI 在本地模式下显式读写共享 Core Data store
+- 启动参数 `--kite-import-release-state`，用于启动时把正式 Release JSON 复制到 Mac 主同步库
+- Mac 设置页同步区域可检查 iCloud、设置下次启动模式、导入正式数据到主同步库、写入主同步标记
 - Mac Debug 实验面板会显示当前 store mode、模式说明和实际 SQLite 路径
-- Debug 构建可在 Mac Debug 面板和 iOS 同步页设置“下次启动”同步模式
-- Mac Debug 面板和 iOS 同步页会显示实际 Bundle ID 和 CloudKit container，便于核对配置
+- Mac Debug 实验面板可把正式 Release JSON 导入 Mac 主同步库
+- Mac 主 UI 在同步库 + CloudKit 模式下会监听 CloudKit 导入完成并刷新本地状态
+- Mac 设置页和 iOS 同步页可设置“下次启动”同步模式，iOS Release 也可用
+- Mac 设置页、Mac Debug 面板和 iOS 同步页会显示实际 CloudKit container，便于核对配置
 
 当前尚未完成：
 
 - Apple Developer Team 选择
 - CloudKit container 后台确认
-- Mac/iOS 实际切换到 CloudKit-backed store
+- Mac/iOS 默认发布路径切换到 CloudKit-backed store
 - 多设备同步验证
 
-当前默认仍使用本地 Core Data store；CloudKit-backed store 只是代码入口已准备好。
+当前 Mac 默认仍使用 JSON；带 `--kite-use-sync-store` 或当前同步模式为 `iCloud / CloudKit` 时，Mac 主 UI 才读写主同步 Core Data store。
+当前 iOS 默认仍使用本地 Core Data；CloudKit-backed store 需要通过 `--kite-sync-cloudkit` 或同步模式偏好启用。
 
 同步模式解析优先级：
 
 1. 启动参数 `--kite-sync-cloudkit`
-2. Debug 偏好里的下次启动模式
+2. 同步模式偏好里的下次启动模式
 3. 默认本地 Core Data
 
-同步模式会在进程启动时冻结为 `HabitSyncStoreMode.current`。Debug 偏好只在下次 App 启动时生效，当前运行中的 store 不会被热切换。
+同步模式会在进程启动时冻结为 `HabitSyncStoreMode.current`。同步模式偏好只在下次 App 启动时生效，当前运行中的 store 不会被热切换。
+
+CloudKit 同步由系统后台调度，不提供实时协同保证。当前 UI 自动重读本地 Core Data 的触发点是：
+
+- CloudKit `import` 完成事件
+- App / 窗口回到前台
+- 用户手动刷新或诊断面板操作
 
 CloudKit 试运行使用独立 store 目录：
 
@@ -107,5 +122,18 @@ CloudKit 试运行使用独立 store 目录：
 - CloudKit 模式：原目录名追加 `-CloudKit`
 
 这样可以避免第一次 CloudKit 试运行时混用本地实验库。
+
+Mac 主同步库路径：
+
+- 本地模式：`~/Library/Application Support/KiteNative-SyncCoreData/kite-sync-core-data.sqlite`
+- CloudKit 模式：`~/Library/Application Support/KiteNative-SyncCoreData-CloudKit/kite-sync-core-data.sqlite`
+
+Mac 主 UI 和 iOS 要验证真实互通时，Mac 首次播种可使用：
+
+```text
+--kite-sync-cloudkit --kite-import-release-state
+```
+
+后续启动如果不想覆盖主同步库，可去掉 `--kite-import-release-state`。
 
 首次真实同步验证按 `docs/sync/cloudkit-verification.md` 执行。

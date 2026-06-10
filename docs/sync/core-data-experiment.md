@@ -12,7 +12,7 @@ Debug 构建中新增：
 
 ```swift
 HabitCoreDataExperiment.importDebugState()
-HabitCoreDataExperiment.importReleaseStateReadOnly()
+HabitCoreDataExperiment.importReleaseStateIntoExperimentStore()
 HabitCoreDataExperiment.runWriteExercise(on:)
 HabitCoreDataExperiment.clearExperimentStore()
 ```
@@ -22,10 +22,13 @@ HabitCoreDataExperiment.clearExperimentStore()
 设置页 Debug 构建中也新增了 `Core Data 实验` 区块：
 
 - `导入 Debug`
-- `只读正式数据`
+- `导入实验库`
+- `导入主同步库`
 - `预览今天`
 - `对比今天`
 - `写入演练`
+- `实验标记`
+- `主同步标记`
 - `清理实验库`
 
 该区块不会出现在 Release 构建中。
@@ -38,13 +41,29 @@ HabitCoreDataExperiment.clearExperimentStore()
 ~/Library/Application Support/KiteNative-Debug/app-state.json
 ```
 
-`importReleaseStateReadOnly()` 读取：
+`importReleaseStateIntoExperimentStore()` 读取：
 
 ```text
 ~/Library/Application Support/KiteNative/app-state.json
 ```
 
-Release JSON 只读，不写回、不迁移、不删除。
+Release JSON 会被读取并复制到当前实验 Core Data store；不会写回、删除或重置原始 JSON。
+如果当前模式是 `iCloud / CloudKit`，该实验 store 会由系统后台同步到 CloudKit 私有库，用于调试同步验证。
+
+`导入主同步库` 会把同一份 Release JSON 复制到 Mac 主 UI 同步库：
+
+```text
+~/Library/Application Support/KiteNative-SyncCoreData/kite-sync-core-data.sqlite
+```
+
+CloudKit 模式下路径为：
+
+```text
+~/Library/Application Support/KiteNative-SyncCoreData-CloudKit/kite-sync-core-data.sqlite
+```
+
+Mac 主 UI 带 `--kite-use-sync-store`，或当前同步模式为 `iCloud / CloudKit` 时，才读写主同步库。
+启动时加 `--kite-import-release-state` 可以把正式 Release JSON 复制到主同步库，效果等同于点击 `导入主同步库`。
 
 ## 实验 Store
 
@@ -91,9 +110,11 @@ Core Data 导入和查询逻辑已抽到 `NativeMac/Shared/HabitCoreDataStore.sw
 - `daySummary(for:)`
 - `clearStoreFile()`
 
-Debug 实验入口只负责选择 JSON 来源和展示结果，不再直接维护 Core Data 写入/读取细节。当前这些写操作是共享数据层能力，尚未替换正式 UI 的 JSON 写入路径。
+Debug 实验入口只负责选择 JSON 来源和展示结果，不再直接维护 Core Data 写入/读取细节。当前这些写操作是共享数据层能力；Mac 默认正式路径仍使用 JSON，但 Mac 同步库模式和 iOS 已经通过共享 Core Data store 读写。
 
-`clearStoreFile()` 会删除实验 SQLite 主文件及旁文件：
+`实验标记` 写入实验库，`主同步标记` 写入 Mac 主同步库。验证 Mac 主 UI 与 iOS 的互通时，应使用 `主同步标记`。
+
+`clearStoreFile()` 会先通过 Core Data coordinator 销毁已加载的 persistent store，再移除进程内 container 缓存并清理 SQLite 旁文件：
 
 - `.sqlite`
 - `.sqlite-wal`
@@ -108,7 +129,7 @@ Debug 实验入口只负责选择 JSON 来源和展示结果，不再直接维�
 - 写入当天隐藏
 - 写入从当天起的截止日期
 
-演练会让实验 store 与当前 JSON 状态不再完全一致。需要重新验证 JSON/Core Data 映射时，先点 `清理实验库`，再重新 `导入 Debug` 或 `只读正式数据`。
+演练会让实验 store 与当前 JSON 状态不再完全一致。需要重新验证 JSON/Core Data 映射时，先点 `清理实验库`，再重新 `导入 Debug` 或 `导入实验库`。
 
 ## 当前实体
 
@@ -155,7 +176,7 @@ Debug 实验层提供 `HabitCoreDataExperimentStore`，可以从实验 Core Data
 
 同时提供 `HabitJSONSnapshotStore` 和 `HabitSnapshotComparator`，用于把当前 JSON 状态与实验 Core Data store 的当天快照做对比。`对比今天` 会检查可见习惯数量、完成数量，以及每一项的顺序、标题和完成状态。
 
-这一步是未来 Mac / iOS 共用数据层的前置工作，但当前 UI 仍未切换到 Core Data，正式 Release 数据仍使用 JSON。
+这一步已经沉淀为 Mac / iOS 共用数据层的一部分。当前 Mac 默认正式路径仍使用 JSON；Mac 同步库模式和 iOS 使用共享 Core Data store。
 
 ## 下一步
 

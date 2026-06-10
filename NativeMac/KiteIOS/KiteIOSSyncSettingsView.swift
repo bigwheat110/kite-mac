@@ -9,17 +9,29 @@ struct KiteIOSSyncSettingsView: View {
             List {
                 Section {
                     LabeledContent("当前模式", value: viewModel.syncModeTitle)
-                    #if DEBUG
                     LabeledContent("下次启动", value: viewModel.nextLaunchSyncModeText)
-                    #endif
                     LabeledContent("iCloud 账号", value: viewModel.iCloudAccountStatusText)
                     LabeledContent("同步事件", value: viewModel.cloudKitEventText)
                     LabeledContent("最近刷新", value: viewModel.lastRefreshText)
+                    LabeledContent("最近标记", value: viewModel.lastSyncMarkerText)
                 }
 
                 Section {
                     Text(viewModel.syncModeDetail)
                         .foregroundStyle(.secondary)
+
+                    if let message = viewModel.syncSettingsMessage {
+                        Label(message, systemImage: "info.circle")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if viewModel.needsRestartForPreferredSyncMode {
+                        Label(viewModel.restartNoticeText, systemImage: "arrow.clockwise.circle")
+                            .foregroundStyle(.orange)
+                    } else {
+                        Label(viewModel.restartNoticeText, systemImage: "checkmark.circle")
+                            .foregroundStyle(.secondary)
+                    }
 
                     LabeledContent("Bundle ID", value: viewModel.bundleIdentifierText)
                     LabeledContent("Container", value: viewModel.cloudKitContainerIdentifierText)
@@ -30,7 +42,7 @@ struct KiteIOSSyncSettingsView: View {
                         .textSelection(.enabled)
 
                     if viewModel.syncMode == .local {
-                        Text("CloudKit 试运行需使用启动参数 \(viewModel.cloudKitLaunchArgumentText)。")
+                        Text("可点下方“下次启动用 iCloud / CloudKit”后重启，也可用启动参数 \(viewModel.cloudKitLaunchArgumentText)。")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -54,9 +66,9 @@ struct KiteIOSSyncSettingsView: View {
                     } label: {
                         Label("写入同步标记", systemImage: "arrow.triangle.2.circlepath")
                     }
+                    .disabled(viewModel.canWriteSyncMarker == false)
                 }
 
-                #if DEBUG
                 Section {
                     Button {
                         viewModel.setNextLaunchSyncMode(.local)
@@ -70,9 +82,8 @@ struct KiteIOSSyncSettingsView: View {
                         Label("下次启动用 iCloud / CloudKit", systemImage: "icloud")
                     }
                 } footer: {
-                    Text("仅 Debug 试运行使用，重启 App 后生效。")
+                    Text(viewModel.restartNoticeText)
                 }
-                #endif
             }
             .navigationTitle("同步")
             .onAppear {

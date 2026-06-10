@@ -2,14 +2,30 @@ import CloudKit
 import Combine
 import Foundation
 
+struct KiteIOSWeekDayItem: Identifiable {
+    let date: Date
+    let isSelected: Bool
+    let isToday: Bool
+    let doneCount: Int
+    let totalCount: Int
+
+    var id: String { HabitDate.key(for: date) }
+    var weekdayTitle: String { HabitDate.weekdayTitle(date) }
+    var dayLabel: String { HabitDate.dayLabel(date) }
+    var countText: String { "\(doneCount)/\(totalCount)" }
+    var hasProgress: Bool { doneCount > 0 }
+}
+
 @MainActor
 final class KiteIOSViewModel: ObservableObject {
     @Published private(set) var snapshot: HabitDaySnapshot
+    @Published private(set) var weekItems: [KiteIOSWeekDayItem] = []
     @Published private(set) var loadMessage: String?
     @Published private(set) var lastRefreshDate: Date?
     @Published private(set) var iCloudAccountStatusText = "尚未检查"
     @Published private(set) var cloudKitEventText = "尚未收到同步事件"
     @Published private(set) var lastSyncMarkerTitle: String?
+    @Published private(set) var syncSettingsMessage: String?
     @Published private(set) var selectedDate: Date
     @Published var draftTitle = ""
     private let syncStore: HabitCoreDataStore
@@ -30,9 +46,11 @@ final class KiteIOSViewModel: ObservableObject {
         self.snapshot = HabitDaySnapshot(dateKey: HabitDate.key(for: selectedDate), habits: [])
         if syncMode == .cloudKit {
             let monitor = HabitCloudKitSyncMonitor { [weak self] summary in
-                self?.cloudKitEventText = summary.text
-                if summary.shouldReloadLocalData {
-                    self?.loadSnapshot()
+                Task { @MainActor in
+                    self?.cloudKitEventText = summary.text
+                    if summary.shouldReloadLocalData {
+                        self?.loadSnapshot()
+                    }
                 }
             }
             monitor.start()
@@ -78,16 +96,33 @@ final class KiteIOSViewModel: ObservableObject {
         Bundle.main.bundleIdentifier ?? "未知"
     }
 
-    #if DEBUG
     var nextLaunchSyncModeText: String {
-        (HabitSyncStoreMode.debugPreference ?? .local).title
+        preferredSyncMode.title
+    }
+
+    var needsRestartForPreferredSyncMode: Bool {
+        preferredSyncMode != syncMode
+    }
+
+    var canWriteSyncMarker: Bool {
+        syncMode == .cloudKit
+    }
+
+    var restartNoticeText: String {
+        needsRestartForPreferredSyncMode
+            ? "重启后切换到\(preferredSyncMode.title)。当前仍在使用\(syncMode.title)。"
+            : "当前启动已使用\(syncMode.title)。"
     }
 
     func setNextLaunchSyncMode(_ mode: HabitSyncStoreMode) {
-        HabitSyncStoreMode.debugPreference = mode
+        HabitSyncStoreMode.preference = mode
+        syncSettingsMessage = "下次启动将使用：\(mode.title)"
         objectWillChange.send()
     }
-    #endif
+
+    private var preferredSyncMode: HabitSyncStoreMode {
+        HabitSyncStoreMode.preferredOrCurrent
+    }
 
     var lastRefreshText: String {
         guard let lastRefreshDate else { return "尚未刷新" }
@@ -104,6 +139,12 @@ final class KiteIOSViewModel: ObservableObject {
 
     func reload() {
         loadSnapshot()
+        syncSettingsMessage = "已刷新当前日期数据"
+    }
+
+    func select(date: Date) {
+        selectedDate = HabitDate.startOfDay(date)
+        loadSnapshot()
     }
 
     func refreshICloudAccountStatus() {
@@ -113,8 +154,12 @@ final class KiteIOSViewModel: ObservableObject {
                 let status = try await CKContainer(identifier: HabitCoreDataStack.cloudKitContainerIdentifier)
                     .accountStatus()
                 iCloudAccountStatusText = Self.describeICloudAccountStatus(status)
+                syncSettingsMessage = status == .available
+                    ? "iCloud 账号可用"
+                    : "iCloud 账号状态：\(iCloudAccountStatusText)"
             } catch {
                 iCloudAccountStatusText = "检查失败：\(error.localizedDescription)"
+                syncSettingsMessage = iCloudAccountStatusText
             }
         }
     }
@@ -144,6 +189,10 @@ final class KiteIOSViewModel: ObservableObject {
     private func addHabit(todayOnly: Bool) {
         let trimmed = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
+        guard hasVisibleHabit(named: trimmed) == false else {
+            loadMessage = "今天已有同名事项"
+            return
+        }
         performWrite("新增失败") {
             try syncStore.addHabit(title: trimmed, startDate: selectedDate, todayOnly: todayOnly)
         }
@@ -159,6 +208,10 @@ final class KiteIOSViewModel: ObservableObject {
     func renameToday(_ habit: HabitDaySnapshotItem, title: String) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
+        guard hasVisibleHabit(named: trimmed, excluding: habit.id) == false else {
+            loadMessage = "今天已有同名事项"
+            return
+        }
         performWrite("改名失败") {
             try syncStore.renameHabitForDay(habitID: habit.id, title: trimmed, on: selectedDate)
         }
@@ -167,6 +220,10 @@ final class KiteIOSViewModel: ObservableObject {
     func renameFromToday(_ habit: HabitDaySnapshotItem, title: String) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
+        guard hasVisibleHabit(named: trimmed, excluding: habit.id) == false else {
+            loadMessage = "今天已有同名事项"
+            return
+        }
         performWrite("改名失败") {
             try syncStore.renameHabitFromDate(habitID: habit.id, title: trimmed, from: selectedDate)
         }
@@ -184,14 +241,21 @@ final class KiteIOSViewModel: ObservableObject {
         }
     }
 
+    func deleteEverywhere(_ habit: HabitDaySnapshotItem) {
+        performWrite("彻底删除失败") {
+            try syncStore.deleteHabit(habitID: habit.id)
+        }
+    }
+
     func setRepeatRule(_ rule: HabitRepeatRule, for habit: HabitDaySnapshotItem) {
+        let normalized = rule.normalized(fallbackWeekday: HabitDate.calendar.component(.weekday, from: selectedDate))
         performWrite("重复规则保存失败") {
-            try syncStore.updateRepeatRule(habitID: habit.id, rule: rule)
+            try syncStore.updateRepeatRule(habitID: habit.id, rule: normalized)
         }
     }
 
     func setCustomRepeatWeekdays(_ weekdays: [Int], for habit: HabitDaySnapshotItem) {
-        let normalized = Array(Set(weekdays.filter { (1...7).contains($0) })).sorted()
+        let normalized = HabitRepeatRule.normalizedWeekdays(weekdays)
         guard normalized.isEmpty == false else { return }
         setRepeatRule(.custom(normalized), for: habit)
     }
@@ -205,32 +269,75 @@ final class KiteIOSViewModel: ObservableObject {
     }
 
     func seedDefaultHabits() {
-        performWrite("默认习惯添加失败") {
-            _ = try syncStore.replaceAll(with: .default)
+        do {
+            let existingState = try syncStore.loadAppState()
+            let existingIDs = Set(existingState.habits.map(\.id))
+            let missingDefaults = AppState.default.habits.filter { existingIDs.contains($0.id) == false }
+            for habit in missingDefaults {
+                try syncStore.addHabit(
+                    title: habit.title,
+                    startDate: selectedDate,
+                    todayOnly: false,
+                    id: habit.id
+                )
+            }
+            loadSnapshot(
+                successMessage: missingDefaults.isEmpty
+                    ? "默认习惯已存在"
+                    : "已补齐 \(missingDefaults.count) 个默认习惯"
+            )
+        } catch {
+            loadMessage = Self.errorMessage("默认习惯添加失败", error: error)
         }
     }
 
     func insertSyncMarker() {
+        guard canWriteSyncMarker else {
+            let message = "请先切到 iCloud / CloudKit 并重启，再写入同步标记"
+            loadMessage = message
+            syncSettingsMessage = message
+            return
+        }
+
         let dateKey = HabitDate.key(for: selectedDate)
         let timeText = Self.syncMarkerTimeFormatter.string(from: .now)
         let title = "iOS同步标记-\(dateKey)-\(timeText)"
         do {
             try syncStore.addHabit(title: title, startDate: selectedDate, todayOnly: false)
             lastSyncMarkerTitle = title
-            loadSnapshot()
+            let message = "同步标记已写入：\(title)"
+            loadSnapshot(successMessage: message)
+            syncSettingsMessage = message
         } catch {
-            loadMessage = "同步标记写入失败"
+            let message = Self.errorMessage("同步标记写入失败", error: error)
+            loadMessage = message
+            syncSettingsMessage = message
         }
     }
 
-    private func loadSnapshot() {
+    private func loadSnapshot(successMessage: String? = nil) {
         do {
             snapshot = try syncStore.daySnapshot(for: selectedDate)
-            loadMessage = nil
+            weekItems = makeWeekItems()
+            loadMessage = successMessage
             lastRefreshDate = .now
         } catch {
             snapshot = HabitDaySnapshot(dateKey: HabitDate.key(for: selectedDate), habits: [])
-            loadMessage = "暂时无法读取同步数据"
+            weekItems = []
+            loadMessage = Self.errorMessage("暂时无法读取同步数据", error: error)
+        }
+    }
+
+    private func makeWeekItems() -> [KiteIOSWeekDayItem] {
+        HabitDate.weekDates(containing: selectedDate).map { date in
+            let daySnapshot = try? syncStore.daySnapshot(for: date)
+            return KiteIOSWeekDayItem(
+                date: date,
+                isSelected: HabitDate.startOfDay(date) == selectedDate,
+                isToday: HabitDate.isToday(date),
+                doneCount: daySnapshot?.doneCount ?? 0,
+                totalCount: daySnapshot?.totalCount ?? 0
+            )
         }
     }
 
@@ -239,7 +346,16 @@ final class KiteIOSViewModel: ObservableObject {
             try operation()
             loadSnapshot()
         } catch {
-            loadMessage = failureMessage
+            loadMessage = Self.errorMessage(failureMessage, error: error)
+        }
+    }
+
+    private func hasVisibleHabit(named title: String, excluding habitID: UUID? = nil) -> Bool {
+        let candidateKey = HabitTitle.duplicateKey(title)
+        let currentSnapshot = (try? syncStore.daySnapshot(for: selectedDate)) ?? snapshot
+        return currentSnapshot.habits.contains { habit in
+            guard habit.id != habitID else { return false }
+            return HabitTitle.duplicateKey(habit.title) == candidateKey
         }
     }
 
@@ -272,5 +388,9 @@ final class KiteIOSViewModel: ObservableObject {
         @unknown default:
             return "未知状态"
         }
+    }
+
+    private static func errorMessage(_ prefix: String, error: Error) -> String {
+        "\(prefix)：\(error.localizedDescription)"
     }
 }

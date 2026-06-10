@@ -130,6 +130,7 @@ struct ChecklistView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 store.refreshTodayIfNeeded()
+                store.reloadSyncStoreIfNeeded(showsStatus: false)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in

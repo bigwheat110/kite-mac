@@ -15,6 +15,7 @@
 		1F5C2792EBD8584A8B4ACB50 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73BB88B56D12AC693E47FC4D /* SettingsView.swift */; };
 		20C23CCC214FA6F0ED9D3C3A /* HabitCloudKitSyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CDD9B0C6B62BB14507410C3 /* HabitCloudKitSyncMonitor.swift */; };
 		24AA96102335B642E7C94195 /* HabitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B7D2C2968251F2693F28C5 /* HabitStore.swift */; };
+		2B3A1E34CBCA2E8EB7858A68 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5B51241E2263CDBC68606970 /* Assets.xcassets */; };
 		43395F0BD0FD080E5B999DF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ADF13AC80CC880FBAE60024 /* Assets.xcassets */; };
 		442E694AC43156D263CA495F /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
 		4919BA6B26B68B521BB1382A /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
@@ -88,6 +89,7 @@
 		58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitCoreDataStore.swift; sourceTree = "<group>"; };
 		593A69AA802F1374983BF811 /* KiteIOSViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteIOSViewModel.swift; sourceTree = "<group>"; };
 		5A6EDF89AF0516FC8E2B821E /* KiteNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiteNative.entitlements; sourceTree = "<group>"; };
+		5B51241E2263CDBC68606970 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6CDD9B0C6B62BB14507410C3 /* HabitCloudKitSyncMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitCloudKitSyncMonitor.swift; sourceTree = "<group>"; };
 		6DC696329E2251316C0EBB65 /* HabitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitModels.swift; sourceTree = "<group>"; };
 		73BB88B56D12AC693E47FC4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -164,6 +166,7 @@
 		AF952E21243F3639731159D5 /* KiteIOS */ = {
 			isa = PBXGroup;
 			children = (
+				5B51241E2263CDBC68606970 /* Assets.xcassets */,
 				A3FB90861040D284AC64109D /* KiteIOS.entitlements */,
 				44898CA8FE6D36050E3668E9 /* KiteIOSApp.swift */,
 				E7DD6F22ED60E303399A0F0B /* KiteIOSContentView.swift */,
@@ -213,6 +216,7 @@
 			buildConfigurationList = 626674550109FFB6074BD9F7 /* Build configuration list for PBXNativeTarget "KiteIOS" */;
 			buildPhases = (
 				05FAA44E04173612708405F6 /* Sources */,
+				AF27CAEF5CA7553B2F77B59A /* Resources */,
 			);
 			buildRules = (
 			);
@@ -314,6 +318,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AF27CAEF5CA7553B2F77B59A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2B3A1E34CBCA2E8EB7858A68 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C2C91EBD68AEB6930A932C1B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -423,11 +435,12 @@
 		37E5F32814607065B3EBF675 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KiteIOS/KiteIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Kite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KiteIOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -582,11 +595,12 @@
 		C857A770BAAC1F307CC32713 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KiteIOS/KiteIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Kite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KiteIOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

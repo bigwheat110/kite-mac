@@ -71,6 +71,112 @@ final class HabitStore {
     }
 }
 
+struct CoreDataImportSummary: Equatable {
+    let sourceURL: URL
+    let storeURL: URL
+    let habitCount: Int
+    let entryCount: Int
+    let dailyOverrideCount: Int
+    let hiddenHabitCount: Int
+}
+
+struct CoreDataSyncMarkerResult: Equatable {
+    let dateKey: String
+    let title: String
+    let visibleHabitCount: Int
+    let storeURL: URL
+}
+
+enum HabitMacSyncStoreBootstrap {
+    static func importReleaseState() throws -> CoreDataImportSummary {
+        try HabitCoreDataImporter.importState(
+            from: appStateURL(directoryName: "KiteNative"),
+            into: HabitMacSyncStoreConfig.makeStore(),
+            storeURL: HabitMacSyncStoreConfig.storeURL(),
+            mergeExisting: true
+        )
+    }
+
+    private static func appStateURL(directoryName: String) -> URL {
+        applicationSupportURL()
+            .appendingPathComponent(directoryName, isDirectory: true)
+            .appendingPathComponent(HabitStore.fileName)
+    }
+}
+
+enum HabitMacSyncStoreDiagnostics {
+    static func insertSyncMarker(on date: Date = .now) throws -> CoreDataSyncMarkerResult {
+        try HabitCoreDataSyncMarkerWriter.insertSyncMarker(
+            titlePrefix: "Mac主同步标记",
+            on: date,
+            into: HabitMacSyncStoreConfig.makeStore(),
+            storeURL: HabitMacSyncStoreConfig.storeURL()
+        )
+    }
+}
+
+private enum HabitCoreDataSyncMarkerWriter {
+    static func insertSyncMarker(
+        titlePrefix: String,
+        on date: Date,
+        into store: HabitCoreDataStore,
+        storeURL: URL
+    ) throws -> CoreDataSyncMarkerResult {
+        let dateKey = HabitDate.key(for: date)
+        let timeText = syncMarkerTimeFormatter.string(from: .now)
+        let title = "\(titlePrefix)-\(dateKey)-\(timeText)"
+
+        try store.addHabit(title: title, startDate: date, todayOnly: false)
+        let summary = try store.daySummary(for: date)
+
+        return CoreDataSyncMarkerResult(
+            dateKey: dateKey,
+            title: title,
+            visibleHabitCount: summary.visibleHabitCount,
+            storeURL: storeURL
+        )
+    }
+
+    private static let syncMarkerTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "HHmmss"
+        return formatter
+    }()
+}
+
+private enum HabitCoreDataImporter {
+    enum ImportError: Error {
+        case missingSource(URL)
+    }
+
+    static func importState(
+        from sourceURL: URL,
+        into store: HabitCoreDataStore,
+        storeURL: URL,
+        mergeExisting: Bool = false
+    ) throws -> CoreDataImportSummary {
+        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            throw ImportError.missingSource(sourceURL)
+        }
+
+        let data = try Data(contentsOf: sourceURL)
+        let state = try JSONDecoder().decode(AppState.self, from: data)
+        let summary = mergeExisting
+            ? try store.mergeImport(state)
+            : try store.replaceAll(with: state)
+
+        return CoreDataImportSummary(
+            sourceURL: sourceURL,
+            storeURL: storeURL,
+            habitCount: summary.habitCount,
+            entryCount: summary.entryCount,
+            dailyOverrideCount: summary.dailyOverrideCount,
+            hiddenHabitCount: summary.hiddenHabitCount
+        )
+    }
+}
+
 #if DEBUG
 struct CoreDataExperimentSummary: Equatable {
     let sourceURL: URL
@@ -105,10 +211,12 @@ struct CoreDataExperimentWriteExerciseResult: Equatable {
 }
 
 struct CoreDataExperimentSyncMarkerResult: Equatable {
-    let dateKey: String
-    let title: String
-    let visibleHabitCount: Int
-    let storeURL: URL
+    let result: CoreDataSyncMarkerResult
+
+    var dateKey: String { result.dateKey }
+    var title: String { result.title }
+    var visibleHabitCount: Int { result.visibleHabitCount }
+    var storeURL: URL { result.storeURL }
 }
 
 enum CoreDataExperimentError: Error {
@@ -129,22 +237,20 @@ enum HabitCoreDataExperiment {
         try importState(from: appStateURL(directoryName: HabitStore.appDirectoryName))
     }
 
-    static func importReleaseStateReadOnly() throws -> CoreDataExperimentSummary {
+    static func importReleaseStateIntoExperimentStore() throws -> CoreDataExperimentSummary {
         try importState(from: appStateURL(directoryName: "KiteNative"))
     }
 
     static func importState(from sourceURL: URL) throws -> CoreDataExperimentSummary {
-        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            throw CoreDataExperimentError.missingSource(sourceURL)
-        }
-
-        let data = try Data(contentsOf: sourceURL)
-        let state = try JSONDecoder().decode(AppState.self, from: data)
         do {
-            let summary = try experimentStore().replaceAll(with: state)
+            let summary = try HabitCoreDataImporter.importState(
+                from: sourceURL,
+                into: experimentStore(),
+                storeURL: storeURL()
+            )
             return CoreDataExperimentSummary(
-                sourceURL: sourceURL,
-                storeURL: storeURL(),
+                sourceURL: summary.sourceURL,
+                storeURL: summary.storeURL,
                 habitCount: summary.habitCount,
                 entryCount: summary.entryCount,
                 dailyOverrideCount: summary.dailyOverrideCount,
@@ -209,19 +315,13 @@ enum HabitCoreDataExperiment {
     }
 
     static func insertSyncMarker(on date: Date = .now) throws -> CoreDataExperimentSyncMarkerResult {
-        let dateKey = HabitDate.key(for: date)
-        let timeText = syncMarkerTimeFormatter.string(from: .now)
-        let title = "Mac同步标记-\(dateKey)-\(timeText)"
-        let store = experimentStore()
-
-        try store.addHabit(title: title, startDate: date, todayOnly: false)
-        let summary = try store.daySummary(for: date)
-
-        return CoreDataExperimentSyncMarkerResult(
-            dateKey: dateKey,
-            title: title,
-            visibleHabitCount: summary.visibleHabitCount,
-            storeURL: storeURL()
+        CoreDataExperimentSyncMarkerResult(
+            result: try HabitCoreDataSyncMarkerWriter.insertSyncMarker(
+                titlePrefix: "Mac实验同步标记",
+                on: date,
+                into: experimentStore(),
+                storeURL: storeURL()
+            )
         )
     }
 
@@ -230,13 +330,6 @@ enum HabitCoreDataExperiment {
             .appendingPathComponent(directoryName, isDirectory: true)
             .appendingPathComponent(HabitStore.fileName)
     }
-
-    private static let syncMarkerTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "HHmmss"
-        return formatter
-    }()
 
     static func storeURL() -> URL {
         HabitSyncStoreFactory.storeURL(directoryName: directoryName, fileName: storeFileName, mode: storeMode)
