@@ -4,6 +4,7 @@
 
 ## 前置配置
 
+- 签名和 Apple Developer 后台准备见 `docs/sync/signing-checklist.md`。
 - 构建前可先运行静态配置检查：
 
 ```bash
@@ -13,6 +14,7 @@ bash scripts/verify-cloudkit-config.sh
 - Xcode Signing Team 已选择同一个 Apple Developer Team。
 - Mac target bundle id: `cn.kitlib.kitemac`。
 - iOS target bundle id: `cn.kitlib.kiteios`。
+- Xcode shared schemes 包含 `KiteNative` 和 `KiteIOS`。
 - Mac entitlement: `NativeMac/KiteNative/KiteNative.entitlements`。
 - iOS entitlement: `NativeMac/KiteIOS/KiteIOS.entitlements`。
 - iOS entitlement 包含 `aps-environment`，Debug 为 `development`，Release 为 `production`。

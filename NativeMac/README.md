@@ -63,6 +63,11 @@ Before building for real device verification, run:
 bash ../scripts/verify-cloudkit-config.sh
 ```
 
+After signing is configured, use the shared Xcode schemes:
+
+- `KiteNative` for the Mac app.
+- `KiteIOS` for the iPhone app.
+
 ## Signing
 
 `project.yml` currently leaves `DEVELOPMENT_TEAM` empty. Before real CloudKit verification, choose the same Apple Developer Team for:
@@ -77,6 +82,12 @@ iCloud.cn.kitlib.kite
 ```
 
 iOS also needs Push Notifications and Background Modes / Remote notifications enabled for Core Data + CloudKit background imports.
+
+See:
+
+```text
+../docs/sync/signing-checklist.md
+```
 
 ## Verification
 

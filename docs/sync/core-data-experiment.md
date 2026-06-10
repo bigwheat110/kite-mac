@@ -2,9 +2,9 @@
 
 ## 目标
 
-这份文档记录 CloudKit 前置实验：先把现有 JSON 状态映射到 Core Data 实体，但不替换当前 UI 数据源。
+这份文档最初记录 CloudKit 前置实验：先把现有 JSON 状态映射到 Core Data 实体。现在它也记录 Mac / iOS 共用 Core Data 数据层和 Debug 实验入口。
 
-当前实验只验证模型拆分是否可行。
+当前实验入口主要用于回归验证模型映射、Core Data 单步写入和 CloudKit 试运行 store 行为。
 
 ## 实验入口
 

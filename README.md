@@ -21,4 +21,5 @@ More detail:
 
 - [NativeMac/README.md](NativeMac/README.md)
 - [docs/sync/architecture.md](docs/sync/architecture.md)
+- [docs/sync/signing-checklist.md](docs/sync/signing-checklist.md)
 - [docs/sync/cloudkit-verification.md](docs/sync/cloudkit-verification.md)

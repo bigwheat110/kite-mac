@@ -73,6 +73,7 @@ targets:
       configs:
         Release:
           APS_ENVIRONMENT: production
+    scheme: {}
   KiteWidgetExtension:
     type: app-extension
     platform: macOS
