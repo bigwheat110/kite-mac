@@ -39,6 +39,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FFEFC063555913DF2335858A"
+               BuildableName = "KiteIOSUnitTests.xctest"
+               BlueprintName = "KiteIOSUnitTests"
+               ReferencedContainer = "container:KiteNative.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

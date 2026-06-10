@@ -30,6 +30,7 @@ targets:
     scheme:
       testTargets:
         - KiteNativeUITests
+        - KiteNativeSharedTests
     dependencies:
       - target: KiteWidgetExtension
   KiteNativeUITests:
@@ -73,7 +74,42 @@ targets:
       configs:
         Release:
           APS_ENVIRONMENT: production
-    scheme: {}
+    scheme:
+      testTargets:
+        - KiteIOSUnitTests
+  KiteIOSUnitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: KiteIOSUnitTests
+      - path: KiteIOS/KiteIOSViewModel.swift
+      - path: KiteIOS/KiteIOSCoreDataStoreFactory.swift
+      - path: Shared/HabitModels.swift
+      - path: Shared/HabitSyncModels.swift
+      - path: Shared/HabitSyncStoreFactory.swift
+      - path: Shared/HabitCoreDataStack.swift
+      - path: Shared/HabitCoreDataStore.swift
+      - path: Shared/HabitCloudKitSyncMonitor.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kiteios.unittests
+        PRODUCT_NAME: KiteIOSUnitTests
+        GENERATE_INFOPLIST_FILE: YES
+  KiteNativeSharedTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: KiteNativeSharedTests
+      - path: Shared/HabitModels.swift
+      - path: Shared/HabitSyncModels.swift
+      - path: Shared/HabitSyncStoreFactory.swift
+      - path: Shared/HabitCoreDataStack.swift
+      - path: Shared/HabitCoreDataStore.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kitemac.sharedtests
+        PRODUCT_NAME: KiteNativeSharedTests
+        GENERATE_INFOPLIST_FILE: YES
   KiteWidgetExtension:
     type: app-extension
     platform: macOS

@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		018CDFF8F8A16DE5076F9820 /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
+		0469B5117AD57F6EC0C2CE7B /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
+		07FF85B13AD2D7FC8805676C /* HabitCloudKitSyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CDD9B0C6B62BB14507410C3 /* HabitCloudKitSyncMonitor.swift */; };
 		098108818982CB3BA4F285AC /* HabitCoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06122F88144027734EBFE318 /* HabitCoreDataStack.swift */; };
 		0BBFDFB3A444CAF033639383 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
+		0D3F7C66365BDC4B251FE06B /* HabitSyncStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */; };
 		0F024C176EC93F1C0031A701 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57933153ADC4CDB5B5F895D /* AppDelegate.swift */; };
 		10B537541D89B4B51BE8E243 /* HabitSyncStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */; };
 		11A7DC3D9012FEC076673106 /* KiteIOSSyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC57B239972CFD155D22F8E1 /* KiteIOSSyncSettingsView.swift */; };
@@ -16,20 +20,27 @@
 		20C23CCC214FA6F0ED9D3C3A /* HabitCloudKitSyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CDD9B0C6B62BB14507410C3 /* HabitCloudKitSyncMonitor.swift */; };
 		24AA96102335B642E7C94195 /* HabitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B7D2C2968251F2693F28C5 /* HabitStore.swift */; };
 		2B3A1E34CBCA2E8EB7858A68 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5B51241E2263CDBC68606970 /* Assets.xcassets */; };
+		38CE552C7C56F576F2B6564D /* HabitCoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06122F88144027734EBFE318 /* HabitCoreDataStack.swift */; };
 		43395F0BD0FD080E5B999DF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9ADF13AC80CC880FBAE60024 /* Assets.xcassets */; };
 		442E694AC43156D263CA495F /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
 		4919BA6B26B68B521BB1382A /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
+		4CB38E5E6AEDA6B3B70D569D /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
+		4D58E161FB78881E5CF6BE93 /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
 		52E38ECFA330C24694394C77 /* HabitSyncStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */; };
 		572C00E1DE1DD77861ABE6E4 /* KiteIOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DD6F22ED60E303399A0F0B /* KiteIOSContentView.swift */; };
 		599113854B4D007B72A97D97 /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
+		6724CAADCB767D1A567A6F37 /* KiteIOSCoreDataStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0968A4366587D30B02338AEA /* KiteIOSCoreDataStoreFactory.swift */; };
 		6A62425D5326081BAD8B4D9A /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
 		713D9550CCB019244B8D1B94 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
 		777BFD7D533269023654E158 /* KiteIOSCoreDataStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0968A4366587D30B02338AEA /* KiteIOSCoreDataStoreFactory.swift */; };
 		7A55ADBC082DB835D5FBE339 /* HabitCloudKitSyncMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CDD9B0C6B62BB14507410C3 /* HabitCloudKitSyncMonitor.swift */; };
+		7BCB63102C2240F488C496AC /* HabitCoreDataSharedStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569F4A1DF0716440B687C911 /* HabitCoreDataSharedStoreTests.swift */; };
 		7FE35F5C9C4A5824308B2B63 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
 		80CDCCA59F834C48C6E459C9 /* KiteWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		864988DD561877DE718EB0FD /* HabitSyncStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */; };
 		88978D24191858DCF3F1A2A6 /* HabitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B7D2C2968251F2693F28C5 /* HabitStore.swift */; };
 		974660629FD913434979B3E2 /* HabitCoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06122F88144027734EBFE318 /* HabitCoreDataStack.swift */; };
+		99F05BA6A991F9230744461A /* HabitCoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06122F88144027734EBFE318 /* HabitCoreDataStack.swift */; };
 		A129B98CDA67747CA58C77C9 /* HabitSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */; };
 		A1FA814333F3AB313CA1D5B3 /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
 		A2F674413937B0DA6FE4E8E2 /* KiteIOSViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A69AA802F1374983BF811 /* KiteIOSViewModel.swift */; };
@@ -38,9 +49,13 @@
 		B8067F14DF4B7FFA4956972D /* ChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */; };
 		C9D89B5F534E5AD115D80F2C /* KiteWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F471ACDBDBC66DBFF1783F75 /* KiteWidgetBundle.swift */; };
 		CE3D7DB5AC2E9DF76BB7389E /* KiteIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44898CA8FE6D36050E3668E9 /* KiteIOSApp.swift */; };
+		CF9AC542D0005061E022E172 /* HabitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC696329E2251316C0EBB65 /* HabitModels.swift */; };
+		D014A416A943F484CF645052 /* KiteIOSViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCDDAE062A6A0ECA01C56CAB /* KiteIOSViewModelTests.swift */; };
 		D8BB05B4D64F6810BABBB1E0 /* HabitSyncStoreFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */; };
 		DA33A9D002E8E5FEA553DB1D /* KiteNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */; };
+		E920C8FE13AAD5BEC9414129 /* HabitCoreDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */; };
 		F12AA4E61E0BDB406E5B4B9F /* HabitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACD0F6182F2F25B0C0F574F8 /* HabitViewModel.swift */; };
+		F7449D2F6D6455772B2D4385 /* KiteIOSViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593A69AA802F1374983BF811 /* KiteIOSViewModel.swift */; };
 		FF37724CD3BA5866D6755BFF /* HabitCoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06122F88144027734EBFE318 /* HabitCoreDataStack.swift */; };
 /* End PBXBuildFile section */
 
@@ -82,10 +97,12 @@
 		2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KiteWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		43B0E851A72686E0EDDFD904 /* KiteNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteNativeApp.swift; sourceTree = "<group>"; };
 		44898CA8FE6D36050E3668E9 /* KiteIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteIOSApp.swift; sourceTree = "<group>"; };
+		50D85E4DB085D3C24426ED15 /* KiteIOSUnitTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KiteIOSUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		51A9E48949143A7212F97B0C /* ChecklistFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistFlowUITests.swift; sourceTree = "<group>"; };
 		51EC7EA6389E1F7D2E0369A8 /* HabitSyncStoreFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitSyncStoreFactory.swift; sourceTree = "<group>"; };
 		54A3803BF6026E6939B5BE72 /* KiteIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KiteIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B7D2C2968251F2693F28C5 /* HabitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitStore.swift; sourceTree = "<group>"; };
+		569F4A1DF0716440B687C911 /* HabitCoreDataSharedStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitCoreDataSharedStoreTests.swift; sourceTree = "<group>"; };
 		58FC628EE058506FFB6F38AD /* HabitCoreDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitCoreDataStore.swift; sourceTree = "<group>"; };
 		593A69AA802F1374983BF811 /* KiteIOSViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteIOSViewModel.swift; sourceTree = "<group>"; };
 		5A6EDF89AF0516FC8E2B821E /* KiteNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiteNative.entitlements; sourceTree = "<group>"; };
@@ -95,11 +112,13 @@
 		73BB88B56D12AC693E47FC4D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiteNativeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B38C6D41CD183AB79774AC6 /* ChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistView.swift; sourceTree = "<group>"; };
+		9A9EC1BC914CD4769965C31E /* KiteNativeSharedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiteNativeSharedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9ADF13AC80CC880FBAE60024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A3FB90861040D284AC64109D /* KiteIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiteIOS.entitlements; sourceTree = "<group>"; };
 		A57933153ADC4CDB5B5F895D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		ACD0F6182F2F25B0C0F574F8 /* HabitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitViewModel.swift; sourceTree = "<group>"; };
 		CD8B1A4FC894D2C67F448C7F /* HabitSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitSyncModels.swift; sourceTree = "<group>"; };
+		DCDDAE062A6A0ECA01C56CAB /* KiteIOSViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteIOSViewModelTests.swift; sourceTree = "<group>"; };
 		E017CC175D7CB370779861C0 /* KiteNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KiteNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7DD6F22ED60E303399A0F0B /* KiteIOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiteIOSContentView.swift; sourceTree = "<group>"; };
 		ED11985B4A1A3B894E1772B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -112,7 +131,9 @@
 			isa = PBXGroup;
 			children = (
 				54A3803BF6026E6939B5BE72 /* KiteIOS.app */,
+				50D85E4DB085D3C24426ED15 /* KiteIOSUnitTests.xctest */,
 				E017CC175D7CB370779861C0 /* KiteNative.app */,
+				9A9EC1BC914CD4769965C31E /* KiteNativeSharedTests.xctest */,
 				7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */,
 				2FEAA3566B987E1F14B2E14A /* KiteWidgetExtension.appex */,
 			);
@@ -151,11 +172,21 @@
 			path = KiteNativeUITests;
 			sourceTree = "<group>";
 		};
+		4C0CBBF3A68873B737384388 /* KiteNativeSharedTests */ = {
+			isa = PBXGroup;
+			children = (
+				569F4A1DF0716440B687C911 /* HabitCoreDataSharedStoreTests.swift */,
+			);
+			path = KiteNativeSharedTests;
+			sourceTree = "<group>";
+		};
 		5CD7B8F4C74825B624A1C86F = {
 			isa = PBXGroup;
 			children = (
 				AF952E21243F3639731159D5 /* KiteIOS */,
+				BAAE9D0662BF3EA09B3D3D31 /* KiteIOSUnitTests */,
 				CF09D24E12B87C4B611AC73E /* KiteNative */,
+				4C0CBBF3A68873B737384388 /* KiteNativeSharedTests */,
 				424192682BC17117A321C76C /* KiteNativeUITests */,
 				207A3564D8DE332B9FBF339D /* KiteWidgetExtension */,
 				2E4F874145FD632855FBF3D8 /* Shared */,
@@ -175,6 +206,14 @@
 				593A69AA802F1374983BF811 /* KiteIOSViewModel.swift */,
 			);
 			path = KiteIOS;
+			sourceTree = "<group>";
+		};
+		BAAE9D0662BF3EA09B3D3D31 /* KiteIOSUnitTests */ = {
+			isa = PBXGroup;
+			children = (
+				DCDDAE062A6A0ECA01C56CAB /* KiteIOSViewModelTests.swift */,
+			);
+			path = KiteIOSUnitTests;
 			sourceTree = "<group>";
 		};
 		CF09D24E12B87C4B611AC73E /* KiteNative */ = {
@@ -229,6 +268,23 @@
 			productReference = 54A3803BF6026E6939B5BE72 /* KiteIOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		280CF445E64B4E2E658B5A38 /* KiteNativeSharedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1E2815F498350C4DE894C8EF /* Build configuration list for PBXNativeTarget "KiteNativeSharedTests" */;
+			buildPhases = (
+				23C702AAFD9F90FF21C95790 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KiteNativeSharedTests;
+			packageProductDependencies = (
+			);
+			productName = KiteNativeSharedTests;
+			productReference = 9A9EC1BC914CD4769965C31E /* KiteNativeSharedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		6F198D9CD2E7F8F4B832BC5C /* KiteNative */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 119E1C628CE498F05C13E3B7 /* Build configuration list for PBXNativeTarget "KiteNative" */;
@@ -267,6 +323,23 @@
 			productReference = 7BA7D0A1E0F62B09042CAC7F /* KiteNativeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		FFEFC063555913DF2335858A /* KiteIOSUnitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46583D6A9F9296E95E2CE3A0 /* Build configuration list for PBXNativeTarget "KiteIOSUnitTests" */;
+			buildPhases = (
+				0E6C0B9691D553B9A52B3241 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KiteIOSUnitTests;
+			packageProductDependencies = (
+			);
+			productName = KiteIOSUnitTests;
+			productReference = 50D85E4DB085D3C24426ED15 /* KiteIOSUnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -284,6 +357,10 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
+					280CF445E64B4E2E658B5A38 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
 					6F198D9CD2E7F8F4B832BC5C = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
@@ -292,6 +369,10 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 						TestTargetID = 6F198D9CD2E7F8F4B832BC5C;
+					};
+					FFEFC063555913DF2335858A = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -310,7 +391,9 @@
 			projectRoot = "";
 			targets = (
 				0F6C649974E1E7EDFB86DE94 /* KiteIOS */,
+				FFEFC063555913DF2335858A /* KiteIOSUnitTests */,
 				6F198D9CD2E7F8F4B832BC5C /* KiteNative */,
+				280CF445E64B4E2E658B5A38 /* KiteNativeSharedTests */,
 				9ACDCB2AE6B66A117F0F5D2D /* KiteNativeUITests */,
 				0CB9750EDD00293A0427CA59 /* KiteWidgetExtension */,
 			);
@@ -367,6 +450,35 @@
 				777BFD7D533269023654E158 /* KiteIOSCoreDataStoreFactory.swift in Sources */,
 				11A7DC3D9012FEC076673106 /* KiteIOSSyncSettingsView.swift in Sources */,
 				A2F674413937B0DA6FE4E8E2 /* KiteIOSViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0E6C0B9691D553B9A52B3241 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07FF85B13AD2D7FC8805676C /* HabitCloudKitSyncMonitor.swift in Sources */,
+				99F05BA6A991F9230744461A /* HabitCoreDataStack.swift in Sources */,
+				E920C8FE13AAD5BEC9414129 /* HabitCoreDataStore.swift in Sources */,
+				0469B5117AD57F6EC0C2CE7B /* HabitModels.swift in Sources */,
+				4CB38E5E6AEDA6B3B70D569D /* HabitSyncModels.swift in Sources */,
+				0D3F7C66365BDC4B251FE06B /* HabitSyncStoreFactory.swift in Sources */,
+				6724CAADCB767D1A567A6F37 /* KiteIOSCoreDataStoreFactory.swift in Sources */,
+				F7449D2F6D6455772B2D4385 /* KiteIOSViewModel.swift in Sources */,
+				D014A416A943F484CF645052 /* KiteIOSViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		23C702AAFD9F90FF21C95790 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7BCB63102C2240F488C496AC /* HabitCoreDataSharedStoreTests.swift in Sources */,
+				38CE552C7C56F576F2B6564D /* HabitCoreDataStack.swift in Sources */,
+				4D58E161FB78881E5CF6BE93 /* HabitCoreDataStore.swift in Sources */,
+				CF9AC542D0005061E022E172 /* HabitModels.swift in Sources */,
+				018CDFF8F8A16DE5076F9820 /* HabitSyncModels.swift in Sources */,
+				864988DD561877DE718EB0FD /* HabitSyncStoreFactory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,6 +649,23 @@
 			};
 			name = Debug;
 		};
+		521232740FC8F110C09B3627 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.sharedtests;
+				PRODUCT_NAME = KiteNativeSharedTests;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 		579CB961FF3618A9B222225A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -551,6 +680,23 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac;
 				PRODUCT_NAME = KiteNative;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5F807EDFACD9D506266C035C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kitemac.sharedtests;
+				PRODUCT_NAME = KiteNativeSharedTests;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -572,6 +718,23 @@
 				SDKROOT = macosx;
 			};
 			name = Debug;
+		};
+		95013C137B459DCC720D695A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kiteios.unittests;
+				PRODUCT_NAME = KiteIOSUnitTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
 		};
 		C5B15D5EF4896ED90CD82191 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -671,6 +834,23 @@
 			};
 			name = Release;
 		};
+		ECDCA4F9017630725346EF77 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cn.kitlib.kiteios.unittests;
+				PRODUCT_NAME = KiteIOSUnitTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		F543BE5C584CB09EE3AB3A2F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -702,11 +882,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		1E2815F498350C4DE894C8EF /* Build configuration list for PBXNativeTarget "KiteNativeSharedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				521232740FC8F110C09B3627 /* Debug */,
+				5F807EDFACD9D506266C035C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		2F92BB873E9A8C601FA96D08 /* Build configuration list for PBXNativeTarget "KiteNativeUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				42E30F81181212A5C9E0B11C /* Debug */,
 				117F37E3CCF57A07C0D75108 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		46583D6A9F9296E95E2CE3A0 /* Build configuration list for PBXNativeTarget "KiteIOSUnitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ECDCA4F9017630725346EF77 /* Debug */,
+				95013C137B459DCC720D695A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

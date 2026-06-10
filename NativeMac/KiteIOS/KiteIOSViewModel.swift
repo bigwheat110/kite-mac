@@ -1,6 +1,7 @@
 import CloudKit
 import Combine
 import Foundation
+import SwiftUI
 
 struct KiteIOSWeekDayItem: Identifiable {
     let date: Date
@@ -16,10 +17,43 @@ struct KiteIOSWeekDayItem: Identifiable {
     var hasProgress: Bool { doneCount > 0 }
 }
 
+struct KiteIOSMonthDayItem: Identifiable {
+    let date: Date
+    let isCurrentMonth: Bool
+    let isSelected: Bool
+    let isToday: Bool
+    let doneCount: Int
+    let totalCount: Int
+    let pendingTitles: [String]
+
+    var id: String { HabitDate.key(for: date) }
+    var dayNumber: String {
+        String(HabitDate.calendar.component(.day, from: date))
+    }
+    var completionText: String { "\(doneCount)/\(totalCount)" }
+    var pendingText: String {
+        if totalCount == 0 { return "无" }
+        if pendingTitles.isEmpty { return "已完成" }
+        if pendingTitles.count <= 2 { return pendingTitles.joined(separator: "、") }
+        return "\(pendingTitles.prefix(2).joined(separator: "、")) +\(pendingTitles.count - 2)"
+    }
+}
+
+struct KiteIOSWeekPlanDay: Identifiable {
+    let date: Date
+    let habits: [HabitDaySnapshotItem]
+
+    var id: String { HabitDate.key(for: date) }
+    var weekdayTitle: String { HabitDate.weekdayTitle(date) }
+    var dayLabel: String { HabitDate.dayLabel(date) }
+}
+
 @MainActor
 final class KiteIOSViewModel: ObservableObject {
     @Published private(set) var snapshot: HabitDaySnapshot
     @Published private(set) var weekItems: [KiteIOSWeekDayItem] = []
+    @Published private(set) var monthItems: [KiteIOSMonthDayItem] = []
+    @Published private(set) var weekPlanDays: [KiteIOSWeekPlanDay] = []
     @Published private(set) var loadMessage: String?
     @Published private(set) var lastRefreshDate: Date?
     @Published private(set) var iCloudAccountStatusText = "尚未检查"
@@ -37,7 +71,8 @@ final class KiteIOSViewModel: ObservableObject {
         selectedDate: Date = .now,
         syncStore: HabitCoreDataStore = KiteIOSCoreDataStoreFactory.makeStore(),
         syncMode: HabitSyncStoreMode = KiteIOSCoreDataStoreFactory.mode,
-        syncStoreURL: URL = KiteIOSCoreDataStoreFactory.storeURL()
+        syncStoreURL: URL = KiteIOSCoreDataStoreFactory.storeURL(),
+        seedsDefaultHabits: Bool = true
     ) {
         self.selectedDate = HabitDate.startOfDay(selectedDate)
         self.syncStore = syncStore
@@ -57,10 +92,17 @@ final class KiteIOSViewModel: ObservableObject {
             self.cloudKitSyncMonitor = monitor
         }
         loadSnapshot()
+        if seedsDefaultHabits {
+            seedDefaultHabitsIfNeeded()
+        }
     }
 
     var dateTitle: String {
         HabitDate.monthDayWeekLabel(selectedDate)
+    }
+
+    var monthTitle: String {
+        HabitDate.monthTitle(selectedDate)
     }
 
     var progressText: String {
@@ -137,6 +179,10 @@ final class KiteIOSViewModel: ObservableObject {
         HabitDate.isToday(selectedDate)
     }
 
+    var defaultHabitCount: Int {
+        AppState.default.habits.count
+    }
+
     func reload() {
         loadSnapshot()
         syncSettingsMessage = "已刷新当前日期数据"
@@ -167,6 +213,24 @@ final class KiteIOSViewModel: ObservableObject {
     func shiftDay(by offset: Int) {
         selectedDate = HabitDate.calendar.date(
             byAdding: .day,
+            value: offset,
+            to: selectedDate
+        ) ?? selectedDate
+        loadSnapshot()
+    }
+
+    func shiftWeek(by offset: Int) {
+        selectedDate = HabitDate.calendar.date(
+            byAdding: .day,
+            value: offset * 7,
+            to: selectedDate
+        ) ?? selectedDate
+        loadSnapshot()
+    }
+
+    func shiftMonth(by offset: Int) {
+        selectedDate = HabitDate.calendar.date(
+            byAdding: .month,
             value: offset,
             to: selectedDate
         ) ?? selectedDate
@@ -291,6 +355,12 @@ final class KiteIOSViewModel: ObservableObject {
         }
     }
 
+    private func seedDefaultHabitsIfNeeded() {
+        guard syncMode == .local else { return }
+        guard (try? syncStore.loadAppState().habits.isEmpty) == true else { return }
+        seedDefaultHabits()
+    }
+
     func insertSyncMarker() {
         guard canWriteSyncMarker else {
             let message = "请先切到 iCloud / CloudKit 并重启，再写入同步标记"
@@ -319,11 +389,15 @@ final class KiteIOSViewModel: ObservableObject {
         do {
             snapshot = try syncStore.daySnapshot(for: selectedDate)
             weekItems = makeWeekItems()
+            monthItems = makeMonthItems()
+            weekPlanDays = makeWeekPlanDays()
             loadMessage = successMessage
             lastRefreshDate = .now
         } catch {
             snapshot = HabitDaySnapshot(dateKey: HabitDate.key(for: selectedDate), habits: [])
             weekItems = []
+            monthItems = []
+            weekPlanDays = []
             loadMessage = Self.errorMessage("暂时无法读取同步数据", error: error)
         }
     }
@@ -337,6 +411,36 @@ final class KiteIOSViewModel: ObservableObject {
                 isToday: HabitDate.isToday(date),
                 doneCount: daySnapshot?.doneCount ?? 0,
                 totalCount: daySnapshot?.totalCount ?? 0
+            )
+        }
+    }
+
+    private func makeMonthItems() -> [KiteIOSMonthDayItem] {
+        let monthAnchor = HabitDate.startOfMonth(for: selectedDate)
+        return HabitDate.monthDates(containing: selectedDate).map { date in
+            let daySnapshot = (try? syncStore.daySnapshot(for: date))
+                ?? HabitDaySnapshot(dateKey: HabitDate.key(for: date), habits: [])
+            let pendingTitles = daySnapshot.habits
+                .filter { $0.isDone == false }
+                .map(\.title)
+
+            return KiteIOSMonthDayItem(
+                date: date,
+                isCurrentMonth: HabitDate.isInSameMonth(date, as: monthAnchor),
+                isSelected: HabitDate.startOfDay(date) == selectedDate,
+                isToday: HabitDate.isToday(date),
+                doneCount: daySnapshot.doneCount,
+                totalCount: daySnapshot.totalCount,
+                pendingTitles: pendingTitles
+            )
+        }
+    }
+
+    private func makeWeekPlanDays() -> [KiteIOSWeekPlanDay] {
+        HabitDate.weekDates(containing: selectedDate).map { date in
+            KiteIOSWeekPlanDay(
+                date: date,
+                habits: (try? syncStore.daySnapshot(for: date).habits) ?? []
             )
         }
     }

@@ -1,5 +1,9 @@
 import Foundation
 
+private func habitApplicationSupportURL() -> URL {
+    FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+}
+
 final class HabitStore {
     static let shared = HabitStore()
 
@@ -98,7 +102,7 @@ enum HabitMacSyncStoreBootstrap {
     }
 
     private static func appStateURL(directoryName: String) -> URL {
-        applicationSupportURL()
+        habitApplicationSupportURL()
             .appendingPathComponent(directoryName, isDirectory: true)
             .appendingPathComponent(HabitStore.fileName)
     }
@@ -326,7 +330,7 @@ enum HabitCoreDataExperiment {
     }
 
     private static func appStateURL(directoryName: String) -> URL {
-        applicationSupportURL()
+        habitApplicationSupportURL()
             .appendingPathComponent(directoryName, isDirectory: true)
             .appendingPathComponent(HabitStore.fileName)
     }

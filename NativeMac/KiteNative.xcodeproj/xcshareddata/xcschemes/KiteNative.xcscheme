@@ -50,6 +50,17 @@
                ReferencedContainer = "container:KiteNative.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "280CF445E64B4E2E658B5A38"
+               BuildableName = "KiteNativeSharedTests.xctest"
+               BlueprintName = "KiteNativeSharedTests"
+               ReferencedContainer = "container:KiteNative.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
