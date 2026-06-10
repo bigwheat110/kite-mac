@@ -2,7 +2,7 @@
 
 ## Apple 能力
 
-- 是否已有可用 Apple Developer 账号？
+- 是否已有可用 Apple Developer 账号？当前 `NativeMac/project.yml` 里的 `DEVELOPMENT_TEAM` 仍为空。
 - iCloud capability 和 CloudKit container 命名使用什么？
 - Mac App 和未来 iOS App 是否使用同一个 bundle/team 配置？
 
@@ -20,7 +20,7 @@
 
 ## 同步体验
 
-- 是否需要在设置里显示 iCloud 登录/同步状态？
+- 是否需要在设置里显示 iCloud 登录/同步状态？已开始：Mac Debug 面板和 iOS 同步页显示只读 iCloud 账号状态；真实同步状态仍待 CloudKit 接入后补充。
 - 是否需要手动“立即同步”按钮？
 - 是否需要展示最近同步时间？
 

@@ -81,6 +81,9 @@ final class HabitViewModel: ObservableObject {
     @Published var editingMode: HabitEditMode = .todayOnly
     @Published var repeatDraft: HabitRepeatDraft?
     @Published private var currentToday: Date
+    #if DEBUG
+    @Published var usesCoreDataTrial = false
+    #endif
 
     init() {
         let loaded = HabitStore.shared.load()
@@ -206,17 +209,7 @@ final class HabitViewModel: ObservableObject {
     }
 
     func title(for habit: HabitItem, on date: Date) -> String {
-        let key = HabitDate.key(for: date)
-        if let override = state.dailyOverrides[key]?[habit.id] {
-            return override
-        }
-
-        let selected = HabitDate.date(from: key)
-        let effective = habit.titleHistory
-            .sorted { $0.key < $1.key }
-            .last(where: { HabitDate.date(from: $0.key) <= selected })
-
-        return effective?.value ?? habit.baseTitle
+        HabitSnapshotBuilder.title(for: habit, in: state, on: date)
     }
 
     func isDone(_ habit: HabitItem) -> Bool {
@@ -257,6 +250,15 @@ final class HabitViewModel: ObservableObject {
     }
 
     func toggle(_ habit: HabitItem) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            performCoreDataTrialWrite("打卡失败") {
+                try coreDataTrialStore().toggleDone(habitID: habit.id, on: selectedDate)
+            }
+            return
+        }
+        #endif
+
         var next = state
         var day = next.entries[dateKey] ?? [:]
         day[habit.id] = !(day[habit.id] ?? false)
@@ -293,6 +295,23 @@ final class HabitViewModel: ObservableObject {
             statusMessage = "今天已有同名事项"
             return
         }
+        #if DEBUG
+        if usesCoreDataTrial {
+            let didWrite = performCoreDataTrialWrite(scope == .todayOnly ? "仅今天新增失败" : "新增模板失败") {
+                try coreDataTrialStore().addHabit(
+                    title: trimmed,
+                    startDate: selectedDate,
+                    todayOnly: scope == .todayOnly
+                )
+            }
+            if didWrite {
+                draftTitle = ""
+                statusMessage = scope == .todayOnly ? "Core Data 试运行：仅今天已新增" : "Core Data 试运行：已加入模板"
+            }
+            return
+        }
+        #endif
+
         var next = state
         switch scope {
         case .todayOnly:
@@ -308,6 +327,15 @@ final class HabitViewModel: ObservableObject {
     }
 
     func removeHabit(_ habit: HabitItem) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            performCoreDataTrialWrite("删除失败") {
+                try coreDataTrialStore().deleteHabit(habitID: habit.id)
+            }
+            return
+        }
+        #endif
+
         var next = state
         next.habits.removeAll { $0.id == habit.id }
         for key in next.entries.keys {
@@ -326,6 +354,18 @@ final class HabitViewModel: ObservableObject {
     }
 
     func hideHabitToday(_ habit: HabitItem) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            let didWrite = performCoreDataTrialWrite("隐藏失败") {
+                try coreDataTrialStore().hideHabitForDay(habitID: habit.id, on: selectedDate)
+            }
+            if didWrite {
+                statusMessage = "Core Data 试运行：仅今天已隐藏"
+            }
+            return
+        }
+        #endif
+
         var next = state
         var hidden = next.hiddenHabits[dateKey] ?? []
         if !hidden.contains(habit.id) {
@@ -338,6 +378,18 @@ final class HabitViewModel: ObservableObject {
     }
 
     func removeHabitFromSelectedDate(_ habit: HabitItem) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            let didWrite = performCoreDataTrialWrite("从这一天起删除失败") {
+                try coreDataTrialStore().endHabitFromDate(habitID: habit.id, from: selectedDate)
+            }
+            if didWrite {
+                statusMessage = "Core Data 试运行：已从这一天起删除"
+            }
+            return
+        }
+        #endif
+
         guard let index = state.habits.firstIndex(where: { $0.id == habit.id }) else { return }
         var next = state
         let previousDay = HabitDate.calendar.date(byAdding: .day, value: -1, to: HabitDate.startOfDay(selectedDate)) ?? selectedDate
@@ -349,6 +401,19 @@ final class HabitViewModel: ObservableObject {
     }
 
     func setRepeatRule(_ rule: HabitRepeatRule, for habit: HabitItem) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            let normalized = normalizedRepeatRule(rule)
+            let didWrite = performCoreDataTrialWrite("重复规则保存失败") {
+                try coreDataTrialStore().updateRepeatRule(habitID: habit.id, rule: normalized)
+            }
+            if didWrite {
+                statusMessage = "Core Data 试运行：重复规则已设为\(normalized.title)"
+            }
+            return
+        }
+        #endif
+
         guard let index = state.habits.firstIndex(where: { $0.id == habit.id }) else { return }
         var next = state
         next.habits[index].repeatRule = normalizedRepeatRule(rule)
@@ -386,6 +451,20 @@ final class HabitViewModel: ObservableObject {
             statusMessage = "至少选择一天"
             return
         }
+        #if DEBUG
+        if usesCoreDataTrial {
+            let rule = HabitRepeatRule.custom(weekdays)
+            let didWrite = performCoreDataTrialWrite("重复规则保存失败") {
+                try coreDataTrialStore().updateRepeatRule(habitID: draft.habitId, rule: rule)
+            }
+            if didWrite {
+                repeatDraft = nil
+                statusMessage = "Core Data 试运行：重复规则已设为\(rule.title)"
+            }
+            return
+        }
+        #endif
+
         var next = state
         next.habits[index].repeatRule = .custom(weekdays)
         state = next
@@ -452,6 +531,34 @@ final class HabitViewModel: ObservableObject {
     func openCoreDataExperiment() {
         activePanel = .coreDataExperiment
     }
+
+    func setCoreDataTrialEnabled(_ enabled: Bool) {
+        guard usesCoreDataTrial != enabled else { return }
+        if enabled {
+            do {
+                state = try coreDataTrialStore().loadAppState()
+                usesCoreDataTrial = true
+                statusMessage = "Core Data 试运行已开启"
+            } catch {
+                statusMessage = "Core Data 试运行开启失败，请先导入实验库"
+            }
+        } else {
+            let loaded = HabitStore.shared.load()
+            state = Self.normalize(loaded).state
+            usesCoreDataTrial = false
+            statusMessage = "已回到 JSON 数据源"
+        }
+    }
+
+    func reloadCoreDataTrialIfNeeded() {
+        guard usesCoreDataTrial else { return }
+        do {
+            state = try coreDataTrialStore().loadAppState()
+            statusMessage = "已刷新 Core Data 试运行数据"
+        } catch {
+            statusMessage = "Core Data 试运行刷新失败: \(error)"
+        }
+    }
     #endif
 
     func openReminders() {
@@ -488,11 +595,37 @@ final class HabitViewModel: ObservableObject {
 
         switch editingMode {
         case .todayOnly:
+            #if DEBUG
+            if usesCoreDataTrial {
+                let didWrite = performCoreDataTrialWrite("仅今天改名失败") {
+                    try coreDataTrialStore().renameHabitForDay(habitID: habit.id, title: trimmed, on: selectedDate)
+                }
+                if didWrite {
+                    statusMessage = "Core Data 试运行：仅今天已改名"
+                    cancelEdit()
+                }
+                return
+            }
+            #endif
+
             var overrides = next.dailyOverrides[dateKey] ?? [:]
             overrides[habit.id] = trimmed
             next.dailyOverrides[dateKey] = overrides
             statusMessage = "仅今天已改名"
         case .templateFromToday:
+            #if DEBUG
+            if usesCoreDataTrial {
+                let didWrite = performCoreDataTrialWrite("模板改名失败") {
+                    try coreDataTrialStore().renameHabitFromDate(habitID: habit.id, title: trimmed, from: selectedDate)
+                }
+                if didWrite {
+                    statusMessage = "Core Data 试运行：模板名已更新"
+                    cancelEdit()
+                }
+                return
+            }
+            #endif
+
             if let index = next.habits.firstIndex(where: { $0.id == habit.id }) {
                 let oldTitle = title(for: next.habits[index])
                 next.habits[index].title = trimmed
@@ -635,11 +768,14 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func persist() {
+        #if DEBUG
+        guard !usesCoreDataTrial else { return }
+        #endif
         HabitStore.shared.save(state)
     }
 
     private func habits(on date: Date) -> [HabitItem] {
-        uniqueVisibleHabits(state.habits.filter { habitApplies($0, on: date) }, on: date)
+        uniqueVisibleHabits(HabitSnapshotBuilder.visibleHabits(from: state, on: date), on: date)
     }
 
     private func orderedHabits(on date: Date) -> [HabitItem] {
@@ -659,6 +795,15 @@ final class HabitViewModel: ObservableObject {
     }
 
     private func applyVisibleHabitOrder(_ visibleIds: [UUID]) {
+        #if DEBUG
+        if usesCoreDataTrial {
+            performCoreDataTrialWrite("排序保存失败") {
+                try coreDataTrialStore().reorderHabits(orderedIDs: visibleIds)
+            }
+            return
+        }
+        #endif
+
         let visibleSet = Set(visibleIds)
         let habitById = Dictionary(uniqueKeysWithValues: state.habits.map { ($0.id, $0) })
         var remainingVisibleIds = visibleIds
@@ -673,23 +818,6 @@ final class HabitViewModel: ObservableObject {
 
         state = next
         persist()
-    }
-
-    private func habitApplies(_ habit: HabitItem, on date: Date) -> Bool {
-        let selected = HabitDate.startOfDay(date)
-        let key = HabitDate.key(for: selected)
-        if state.hiddenHabits[key]?.contains(habit.id) == true {
-            return false
-        }
-        if let startDateKey = habit.startDateKey,
-           HabitDate.date(from: startDateKey) > selected {
-            return false
-        }
-        if let endDateKey = habit.endDateKey,
-           HabitDate.date(from: endDateKey) < selected {
-            return false
-        }
-        return habit.repeatRule.applies(to: selected)
     }
 
     private func normalizedRepeatRule(_ rule: HabitRepeatRule) -> HabitRepeatRule {
@@ -767,8 +895,8 @@ final class HabitViewModel: ObservableObject {
         for dateKey in knownDateKeys {
             let date = HabitDate.date(from: dateKey)
             var keeperByTitle: [String: UUID] = [:]
-            for habit in state.habits where habitApplies(habit, on: date, hiddenHabits: state.hiddenHabits) {
-                let titleKey = duplicateTitleKey(title(for: habit, on: date, dailyOverrides: state.dailyOverrides))
+            for habit in HabitSnapshotBuilder.visibleHabits(from: state, on: date) {
+                let titleKey = duplicateTitleKey(HabitSnapshotBuilder.title(for: habit, in: state, on: date))
                 if let keeperId = keeperByTitle[titleKey] {
                     didChange = true
                     replacementByHabitId[habit.id] = keeperId
@@ -825,42 +953,28 @@ final class HabitViewModel: ObservableObject {
         return normalized.precomposedStringWithCanonicalMapping
     }
 
-    private static func title(
-        for habit: HabitItem,
-        on date: Date,
-        dailyOverrides: [String: [UUID: String]]
-    ) -> String {
-        let key = HabitDate.key(for: date)
-        if let override = dailyOverrides[key]?[habit.id] {
-            return override
-        }
-
-        let selected = HabitDate.date(from: key)
-        let effective = habit.titleHistory
-            .sorted { $0.key < $1.key }
-            .last(where: { HabitDate.date(from: $0.key) <= selected })
-
-        return effective?.value ?? habit.baseTitle
+    #if DEBUG
+    private func coreDataTrialStore() -> HabitCoreDataStore {
+        HabitSyncStoreFactory.makeStore(
+            directoryName: HabitCoreDataExperiment.directoryName,
+            fileName: HabitCoreDataExperiment.storeFileName,
+            mode: HabitSyncStoreMode.current
+        )
     }
 
-    private static func habitApplies(
-        _ habit: HabitItem,
-        on date: Date,
-        hiddenHabits: [String: [UUID]]
+    @discardableResult
+    private func performCoreDataTrialWrite(
+        _ failureMessage: String,
+        operation: () throws -> Void
     ) -> Bool {
-        let selected = HabitDate.startOfDay(date)
-        let key = HabitDate.key(for: selected)
-        if hiddenHabits[key]?.contains(habit.id) == true {
+        do {
+            try operation()
+            state = try coreDataTrialStore().loadAppState()
+            return true
+        } catch {
+            statusMessage = "\(failureMessage): \(error)"
             return false
         }
-        if let startDateKey = habit.startDateKey,
-           HabitDate.date(from: startDateKey) > selected {
-            return false
-        }
-        if let endDateKey = habit.endDateKey,
-           HabitDate.date(from: endDateKey) < selected {
-            return false
-        }
-        return habit.repeatRule.applies(to: selected)
     }
+    #endif
 }

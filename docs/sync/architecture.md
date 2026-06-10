@@ -20,6 +20,12 @@
 - `NSPersistentCloudKitContainer`
 - 用户私有 iCloud 数据库
 
+当前预留 CloudKit container：
+
+- `iCloud.cn.kitlib.kite`
+
+该 container 需要在 Apple Developer 账号和 Xcode Signing & Capabilities 中确认后才能用于真实同步。
+
 自建 `FastAPI + PostgreSQL` 后端不再作为当前主线，只保留为未来跨平台或 SaaS 化时的备选。
 
 ## 为什么不用自建服务器
@@ -63,3 +69,43 @@ Kite 当前是结构化 App 状态，包含习惯、打卡、每日覆盖和隐�
 - 自建服务器
 - 实时协同
 - 复杂冲突 UI
+
+## 工程准备状态
+
+当前工程已准备：
+
+- macOS entitlement: `NativeMac/KiteNative/KiteNative.entitlements`
+- iOS entitlement: `NativeMac/KiteIOS/KiteIOS.entitlements`
+- `HabitCoreDataStack.makeLocalContainer(storeURL:)`
+- `HabitCoreDataStack.makeCloudKitContainer(storeURL:)`
+- `HabitSyncStoreFactory`，用于在本地 Core Data 和 CloudKit-backed Core Data 之间切换
+- 启动参数 `--kite-sync-cloudkit`，用于手动进入 CloudKit-backed 试运行模式
+- Mac Debug 实验面板会显示当前 store mode、模式说明和实际 SQLite 路径
+- Debug 构建可在 Mac Debug 面板和 iOS 同步页设置“下次启动”同步模式
+- Mac Debug 面板和 iOS 同步页会显示实际 Bundle ID 和 CloudKit container，便于核对配置
+
+当前尚未完成：
+
+- Apple Developer Team 选择
+- CloudKit container 后台确认
+- Mac/iOS 实际切换到 CloudKit-backed store
+- 多设备同步验证
+
+当前默认仍使用本地 Core Data store；CloudKit-backed store 只是代码入口已准备好。
+
+同步模式解析优先级：
+
+1. 启动参数 `--kite-sync-cloudkit`
+2. Debug 偏好里的下次启动模式
+3. 默认本地 Core Data
+
+同步模式会在进程启动时冻结为 `HabitSyncStoreMode.current`。Debug 偏好只在下次 App 启动时生效，当前运行中的 store 不会被热切换。
+
+CloudKit 试运行使用独立 store 目录：
+
+- 本地模式：调用方传入的原目录名
+- CloudKit 模式：原目录名追加 `-CloudKit`
+
+这样可以避免第一次 CloudKit 试运行时混用本地实验库。
+
+首次真实同步验证按 `docs/sync/cloudkit-verification.md` 执行。

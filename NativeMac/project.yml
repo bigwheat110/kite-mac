@@ -3,6 +3,7 @@ options:
   minimumXcodeGenVersion: 2.38.0
   deploymentTarget:
     macOS: "14.0"
+    iOS: "17.0"
 settings:
   base:
     PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kitemac
@@ -25,6 +26,7 @@ targets:
         PRODUCT_NAME: KiteNative
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: KiteNative/KiteNative.entitlements
     scheme:
       testTargets:
         - KiteNativeUITests
@@ -45,12 +47,34 @@ targets:
         TEST_TARGET_NAME: KiteNative
         BUNDLE_LOADER: ""
         TEST_HOST: ""
+  KiteIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: KiteIOS
+      - path: Shared/HabitModels.swift
+      - path: Shared/HabitSyncModels.swift
+      - path: Shared/HabitSyncStoreFactory.swift
+      - path: Shared/HabitCoreDataStack.swift
+      - path: Shared/HabitCoreDataStore.swift
+      - path: Shared/HabitCloudKitSyncMonitor.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.kitlib.kiteios
+        PRODUCT_NAME: KiteIOS
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Kite
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: 1
+        CODE_SIGN_ENTITLEMENTS: KiteIOS/KiteIOS.entitlements
   KiteWidgetExtension:
     type: app-extension
     platform: macOS
     sources:
       - path: KiteWidgetExtension
       - path: Shared
+        excludes:
+          - HabitCloudKitSyncMonitor.swift
     settings:
       base:
         INFOPLIST_FILE: KiteWidgetExtension/Info.plist

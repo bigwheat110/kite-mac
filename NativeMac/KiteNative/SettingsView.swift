@@ -1,4 +1,7 @@
 import SwiftUI
+#if DEBUG
+import CloudKit
+#endif
 
 struct SettingsView: View {
     @EnvironmentObject private var store: HabitViewModel
@@ -119,7 +122,11 @@ struct CoreDataExperimentPanelView: View {
     @EnvironmentObject private var store: HabitViewModel
     var embeddedInSettings = false
     @State private var message = "尚未运行"
+    @State private var iCloudAccountStatus = "尚未检查"
+    @State private var nextLaunchSyncMode = HabitSyncStoreMode.debugPreference ?? .local
+    @StateObject private var cloudKitSyncStatus = CloudKitSyncStatusModel()
     private var palette: ThemePalette { .palette(for: store.theme) }
+    private var syncMode: HabitSyncStoreMode { HabitCoreDataExperiment.storeMode }
 
     var body: some View {
         VStack(alignment: .leading, spacing: embeddedInSettings ? 12 : 16) {
@@ -151,6 +158,50 @@ struct CoreDataExperimentPanelView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: syncMode == .cloudKit ? "icloud" : "internaldrive")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(palette.accent)
+                    Text("当前模式：\(syncMode.title)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(palette.textPrimary)
+                }
+
+                Text(syncMode.detail)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(palette.textSecondary)
+
+                Text("Store: \(HabitCoreDataExperiment.storeURL().path)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(palette.textSecondary)
+                    .lineLimit(2)
+                    .textSelection(.enabled)
+
+                if syncMode == .local {
+                    Text("CloudKit 试运行需使用启动参数 \(HabitSyncStoreMode.cloudKitLaunchArgument)。")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
+                }
+
+                Text("下次启动：\(nextLaunchSyncMode.title)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(palette.textSecondary)
+
+                Text("Bundle ID: \(Bundle.main.bundleIdentifier ?? "未知")")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(palette.textSecondary)
+                    .textSelection(.enabled)
+
+                Text("Container: \(HabitCoreDataStack.cloudKitContainerIdentifier)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(palette.textSecondary)
+                    .textSelection(.enabled)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.panelStrong.opacity(embeddedInSettings ? 0.55 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
             HStack(spacing: 8) {
                 experimentButton("导入 Debug", prominent: true) {
                     run { try HabitCoreDataExperiment.importDebugState() }
@@ -160,10 +211,60 @@ struct CoreDataExperimentPanelView: View {
                     run { try HabitCoreDataExperiment.importReleaseStateReadOnly() }
                 }
 
+                experimentButton("预览今天", prominent: true) {
+                    previewToday()
+                }
+            }
+
+            HStack(spacing: 8) {
+                experimentButton("对比今天", prominent: true) {
+                    compareToday()
+                }
+
+                experimentButton("写入演练", prominent: true) {
+                    runWriteExercise()
+                }
+
+                experimentButton("同步标记", prominent: true) {
+                    insertSyncMarker()
+                }
+            }
+
+            HStack(spacing: 8) {
                 experimentButton("清理实验库", prominent: false) {
                     clearStore()
                 }
+
+                Text(syncMode.title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(palette.textSecondary)
+
+                experimentButton(store.usesCoreDataTrial ? "关闭试运行" : "开启试运行", prominent: !store.usesCoreDataTrial) {
+                    toggleCoreDataTrial()
+                }
+
+                experimentButton("检查 iCloud", prominent: false) {
+                    checkICloudAccountStatus()
+                }
             }
+
+            HStack(spacing: 8) {
+                experimentButton("下次本地", prominent: false) {
+                    setNextLaunchSyncMode(.local)
+                }
+
+                experimentButton("下次 iCloud", prominent: false) {
+                    setNextLaunchSyncMode(.cloudKit)
+                }
+            }
+
+            Text("iCloud 账号：\(iCloudAccountStatus)")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(palette.textSecondary)
+
+            Text("同步事件：\(cloudKitSyncStatus.eventText)")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(palette.textSecondary)
 
             Text(message)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -188,6 +289,16 @@ struct CoreDataExperimentPanelView: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
+            }
+        }
+        .onAppear {
+            cloudKitSyncStatus.configure(for: syncMode) {
+                store.reloadCoreDataTrialIfNeeded()
+            }
+        }
+        .onChange(of: syncMode) { _, newMode in
+            cloudKitSyncStatus.configure(for: newMode) {
+                store.reloadCoreDataTrialIfNeeded()
             }
         }
     }
@@ -215,6 +326,133 @@ struct CoreDataExperimentPanelView: View {
         }
     }
 
+    private func toggleCoreDataTrial() {
+        let enabled = !store.usesCoreDataTrial
+        store.setCoreDataTrialEnabled(enabled)
+        message = enabled
+            ? "试运行已开启：Mac UI 将读写独立 Core Data 实验库"
+            : "试运行已关闭：Mac UI 已回到 JSON 数据源"
+    }
+
+    private func previewToday() {
+        do {
+            let syncStore = HabitCoreDataExperimentStore()
+            let snapshot = try syncStore.daySnapshot(for: store.selectedDate)
+            let preview = try HabitCoreDataExperiment.previewDay(store.selectedDate)
+            let titles = snapshot.habits.map(\.title).prefix(8).joined(separator: " / ")
+            let suffix = snapshot.habits.count > 8 ? " ..." : ""
+            message = """
+            date: \(snapshot.dateKey)
+            total: \(preview.totalHabitCount), visible: \(snapshot.totalCount), done: \(snapshot.doneCount)
+            overrides: \(preview.overrideCount), hidden: \(preview.hiddenCount)
+            titles: \(titles)\(suffix)
+            """
+        } catch {
+            message = "预览失败: \(error)"
+        }
+    }
+
+    private func compareToday() {
+        do {
+            let comparison = try HabitSnapshotComparator.compare(
+                json: HabitJSONSnapshotStore(state: store.state),
+                other: HabitCoreDataExperimentStore(),
+                on: store.selectedDate
+            )
+            if comparison.matches {
+                message = """
+                date: \(comparison.dateKey)
+                JSON 与 Core Data 匹配
+                visible: \(comparison.json.totalCount), done: \(comparison.json.doneCount)
+                """
+            } else {
+                let details = comparison.differences.prefix(5).joined(separator: "\n")
+                let suffix = comparison.differences.count > 5 ? "\n..." : ""
+                message = """
+                date: \(comparison.dateKey)
+                JSON/Core Data 不一致
+                JSON: \(comparison.json.totalCount) visible, \(comparison.json.doneCount) done
+                Core Data: \(comparison.other.totalCount) visible, \(comparison.other.doneCount) done
+                \(details)\(suffix)
+                """
+            }
+        } catch {
+            message = "对比失败: \(error)"
+        }
+    }
+
+    private func runWriteExercise() {
+        do {
+            let result = try HabitCoreDataExperiment.runWriteExercise(on: store.selectedDate)
+            let titles = result.visibleTitles.prefix(8).joined(separator: " / ")
+            let suffix = result.visibleTitles.count > 8 ? " ..." : ""
+            message = """
+            date: \(result.dateKey)
+            写入演练完成
+            inserted: \(result.insertedTitle)
+            todayName: \(result.renamedTodayTitle)
+            templateName: \(result.renamedTemplateTitle)
+            total: \(result.totalHabitCount), visible: \(result.visibleHabitCount), done: \(result.doneCount), hidden: \(result.hiddenCount)
+            titles: \(titles)\(suffix)
+            """
+        } catch {
+            message = "写入演练失败: \(error)"
+        }
+    }
+
+    private func insertSyncMarker() {
+        do {
+            let result = try HabitCoreDataExperiment.insertSyncMarker(on: store.selectedDate)
+            store.reloadCoreDataTrialIfNeeded()
+            message = """
+            date: \(result.dateKey)
+            同步标记已写入
+            title: \(result.title)
+            visible: \(result.visibleHabitCount)
+            store: \(result.storeURL.path)
+            """
+        } catch {
+            message = "同步标记写入失败: \(error)"
+        }
+    }
+
+    private func checkICloudAccountStatus() {
+        iCloudAccountStatus = "检查中..."
+        let container = CKContainer(identifier: HabitCoreDataStack.cloudKitContainerIdentifier)
+        container.accountStatus { status, error in
+            DispatchQueue.main.async {
+                if let error {
+                    iCloudAccountStatus = "检查失败：\(error.localizedDescription)"
+                } else {
+                    iCloudAccountStatus = describeICloudAccountStatus(status)
+                }
+            }
+        }
+    }
+
+    private func setNextLaunchSyncMode(_ mode: HabitSyncStoreMode) {
+        HabitSyncStoreMode.debugPreference = mode
+        nextLaunchSyncMode = mode
+        message = "下次启动将使用：\(mode.title)"
+    }
+
+    private func describeICloudAccountStatus(_ status: CKAccountStatus) -> String {
+        switch status {
+        case .available:
+            return "可用"
+        case .noAccount:
+            return "未登录 iCloud"
+        case .restricted:
+            return "受限制"
+        case .couldNotDetermine:
+            return "无法确定"
+        case .temporarilyUnavailable:
+            return "暂时不可用"
+        @unknown default:
+            return "未知状态"
+        }
+    }
+
     private func experimentButton(
         _ title: String,
         prominent: Bool,
@@ -236,6 +474,33 @@ struct CoreDataExperimentPanelView: View {
                 }
         }
         .buttonStyle(.plain)
+    }
+}
+
+private final class CloudKitSyncStatusModel: ObservableObject {
+    @Published var eventText = "仅 CloudKit 模式监听"
+    private var monitor: HabitCloudKitSyncMonitor?
+    private var onReloadLocalData: (() -> Void)?
+
+    func configure(for mode: HabitSyncStoreMode, onReloadLocalData: @escaping () -> Void) {
+        self.onReloadLocalData = onReloadLocalData
+        guard mode == .cloudKit else {
+            monitor?.stop()
+            monitor = nil
+            eventText = "仅 CloudKit 模式监听"
+            return
+        }
+
+        guard monitor == nil else { return }
+        eventText = "尚未收到同步事件"
+        let monitor = HabitCloudKitSyncMonitor { [weak self] summary in
+            self?.eventText = summary.text
+            if summary.shouldReloadLocalData {
+                self?.onReloadLocalData?()
+            }
+        }
+        monitor.start()
+        self.monitor = monitor
     }
 }
 #endif

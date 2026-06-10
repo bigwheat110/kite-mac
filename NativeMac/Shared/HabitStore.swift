@@ -1,4 +1,3 @@
-import CoreData
 import Foundation
 
 final class HabitStore {
@@ -90,6 +89,26 @@ struct CoreDataExperimentDayPreview: Equatable {
     let overrideCount: Int
     let hiddenCount: Int
     let visibleTitles: [String]
+    let snapshot: HabitDaySnapshot
+}
+
+struct CoreDataExperimentWriteExerciseResult: Equatable {
+    let dateKey: String
+    let insertedTitle: String
+    let renamedTodayTitle: String
+    let renamedTemplateTitle: String
+    let totalHabitCount: Int
+    let visibleHabitCount: Int
+    let doneCount: Int
+    let hiddenCount: Int
+    let visibleTitles: [String]
+}
+
+struct CoreDataExperimentSyncMarkerResult: Equatable {
+    let dateKey: String
+    let title: String
+    let visibleHabitCount: Int
+    let storeURL: URL
 }
 
 enum CoreDataExperimentError: Error {
@@ -101,6 +120,10 @@ enum CoreDataExperimentError: Error {
 
 enum HabitCoreDataExperiment {
     static let storeFileName = "kite-core-data-experiment.sqlite"
+    static let directoryName = "KiteNative-CoreDataExperiment"
+    static var storeMode: HabitSyncStoreMode {
+        HabitSyncStoreMode.current
+    }
 
     static func importDebugState() throws -> CoreDataExperimentSummary {
         try importState(from: appStateURL(directoryName: HabitStore.appDirectoryName))
@@ -117,316 +140,89 @@ enum HabitCoreDataExperiment {
 
         let data = try Data(contentsOf: sourceURL)
         let state = try JSONDecoder().decode(AppState.self, from: data)
-        let container = try makeContainer()
-        let context = container.viewContext
-
-        try resetExperimentData(in: context)
-        let summary = importState(state, sourceURL: sourceURL, storeURL: storeURL(), into: context)
-
         do {
-            try context.save()
+            let summary = try experimentStore().replaceAll(with: state)
+            return CoreDataExperimentSummary(
+                sourceURL: sourceURL,
+                storeURL: storeURL(),
+                habitCount: summary.habitCount,
+                entryCount: summary.entryCount,
+                dailyOverrideCount: summary.dailyOverrideCount,
+                hiddenHabitCount: summary.hiddenHabitCount
+            )
         } catch {
             throw CoreDataExperimentError.saveFailed(error)
         }
-
-        return summary
     }
 
     static func clearExperimentStore() throws {
-        let url = storeURL()
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        try FileManager.default.removeItem(at: url)
+        try experimentStore().clearStoreFile()
     }
 
     static func previewDay(_ date: Date = .now) throws -> CoreDataExperimentDayPreview {
-        let dateKey = HabitDate.key(for: date)
-        let container = try makeContainer()
-        let context = container.viewContext
-        let habits = try fetchObjects(entityName: "HabitEntity", in: context)
-        let entries = try fetchObjects(entityName: "HabitEntryEntity", dateKey: dateKey, in: context)
-        let overrides = try fetchObjects(entityName: "DailyOverrideEntity", dateKey: dateKey, in: context)
-        let hidden = try fetchObjects(entityName: "HiddenHabitEntity", dateKey: dateKey, in: context)
-
-        let hiddenIDs = Set(hidden.compactMap { $0.value(forKey: "habitID") as? UUID })
-        let doneIDs = Set(entries.compactMap { object -> UUID? in
-            guard object.value(forKey: "isDone") as? Bool == true else { return nil }
-            return object.value(forKey: "habitID") as? UUID
-        })
-        let titleByHabitID = Dictionary(
-            uniqueKeysWithValues: overrides.compactMap { object -> (UUID, String)? in
-                guard let habitID = object.value(forKey: "habitID") as? UUID,
-                      let title = object.value(forKey: "title") as? String
-                else {
-                    return nil
-                }
-                return (habitID, title)
-            }
-        )
-
-        let visibleTitles = habits
-            .compactMap { object -> (Date, String)? in
-                guard let habitID = object.value(forKey: "id") as? UUID,
-                      hiddenIDs.contains(habitID) == false,
-                      habitApplies(object, on: dateKey)
-                else {
-                    return nil
-                }
-                let createdAt = object.value(forKey: "createdAt") as? Date ?? .distantPast
-                let title = titleByHabitID[habitID]
-                    ?? object.value(forKey: "title") as? String
-                    ?? object.value(forKey: "baseTitle") as? String
-                    ?? "未命名"
-                return (createdAt, title)
-            }
-            .sorted { $0.0 < $1.0 }
-            .map(\.1)
+        let summary = try experimentStore().daySummary(for: date)
 
         return CoreDataExperimentDayPreview(
+            dateKey: summary.dateKey,
+            totalHabitCount: summary.totalHabitCount,
+            visibleHabitCount: summary.visibleHabitCount,
+            doneCount: summary.doneCount,
+            overrideCount: summary.overrideCount,
+            hiddenCount: summary.hiddenCount,
+            visibleTitles: summary.visibleTitles,
+            snapshot: summary.snapshot
+        )
+    }
+
+    static func daySnapshot(for date: Date) throws -> HabitDaySnapshot {
+        try experimentStore().daySnapshot(for: date)
+    }
+
+    static func runWriteExercise(on date: Date = .now) throws -> CoreDataExperimentWriteExerciseResult {
+        let dateKey = HabitDate.key(for: date)
+        let insertedTitle = "CoreData写入演练-\(dateKey)"
+        let renamedTodayTitle = "\(insertedTitle)-今日改名"
+        let renamedTemplateTitle = "\(insertedTitle)-模板改名"
+        let store = experimentStore()
+        let insertedID = UUID()
+
+        try store.addHabit(title: insertedTitle, startDate: date, todayOnly: false, id: insertedID)
+        try store.setDone(true, habitID: insertedID, on: date)
+        try store.renameHabitForDay(habitID: insertedID, title: renamedTodayTitle, on: date)
+        try store.renameHabitFromDate(habitID: insertedID, title: renamedTemplateTitle, from: date)
+        try store.hideHabitForDay(habitID: insertedID, on: date)
+        let hiddenSummary = try store.daySummary(for: date)
+
+        try store.endHabitFromDate(habitID: insertedID, from: date)
+
+        return CoreDataExperimentWriteExerciseResult(
             dateKey: dateKey,
-            totalHabitCount: habits.count,
-            visibleHabitCount: visibleTitles.count,
-            doneCount: doneIDs.subtracting(hiddenIDs).count,
-            overrideCount: overrides.count,
-            hiddenCount: hidden.count,
-            visibleTitles: visibleTitles
+            insertedTitle: insertedTitle,
+            renamedTodayTitle: renamedTodayTitle,
+            renamedTemplateTitle: renamedTemplateTitle,
+            totalHabitCount: hiddenSummary.totalHabitCount,
+            visibleHabitCount: hiddenSummary.visibleHabitCount,
+            doneCount: hiddenSummary.doneCount,
+            hiddenCount: hiddenSummary.hiddenCount,
+            visibleTitles: hiddenSummary.visibleTitles
         )
     }
 
-    private static func importState(
-        _ state: AppState,
-        sourceURL: URL,
-        storeURL: URL,
-        into context: NSManagedObjectContext
-    ) -> CoreDataExperimentSummary {
-        var entryCount = 0
-        var dailyOverrideCount = 0
-        var hiddenHabitCount = 0
+    static func insertSyncMarker(on date: Date = .now) throws -> CoreDataExperimentSyncMarkerResult {
+        let dateKey = HabitDate.key(for: date)
+        let timeText = syncMarkerTimeFormatter.string(from: .now)
+        let title = "Mac同步标记-\(dateKey)-\(timeText)"
+        let store = experimentStore()
 
-        for habit in state.habits {
-            let entity = NSEntityDescription.insertNewObject(forEntityName: "HabitEntity", into: context)
-            entity.setValue(habit.id, forKey: "id")
-            entity.setValue(habit.title, forKey: "title")
-            entity.setValue(habit.baseTitle, forKey: "baseTitle")
-            entity.setValue(habit.createdAt, forKey: "createdAt")
-            entity.setValue(habit.createdAt, forKey: "updatedAt")
-            entity.setValue(habit.startDateKey, forKey: "startDateKey")
-            entity.setValue(habit.endDateKey, forKey: "endDateKey")
-            entity.setValue(habit.repeatRule.kind.rawValue, forKey: "repeatKind")
-            entity.setValue(habit.repeatRule.weekdays.map(String.init).joined(separator: ","), forKey: "repeatWeekdays")
-            entity.setValue(encodeJSONString(habit.titleHistory), forKey: "titleHistoryJSON")
-        }
+        try store.addHabit(title: title, startDate: date, todayOnly: false)
+        let summary = try store.daySummary(for: date)
 
-        for (dateKey, entries) in state.entries {
-            for (habitID, isDone) in entries {
-                let entity = NSEntityDescription.insertNewObject(forEntityName: "HabitEntryEntity", into: context)
-                entity.setValue(UUID(), forKey: "id")
-                entity.setValue(habitID, forKey: "habitID")
-                entity.setValue(dateKey, forKey: "dateKey")
-                entity.setValue(isDone, forKey: "isDone")
-                entity.setValue(Date(), forKey: "createdAt")
-                entity.setValue(Date(), forKey: "updatedAt")
-                entryCount += 1
-            }
-        }
-
-        for (dateKey, overrides) in state.dailyOverrides {
-            for (habitID, title) in overrides {
-                let entity = NSEntityDescription.insertNewObject(forEntityName: "DailyOverrideEntity", into: context)
-                entity.setValue(UUID(), forKey: "id")
-                entity.setValue(habitID, forKey: "habitID")
-                entity.setValue(dateKey, forKey: "dateKey")
-                entity.setValue(title, forKey: "title")
-                entity.setValue(Date(), forKey: "createdAt")
-                entity.setValue(Date(), forKey: "updatedAt")
-                dailyOverrideCount += 1
-            }
-        }
-
-        for (dateKey, hiddenIDs) in state.hiddenHabits {
-            for habitID in hiddenIDs {
-                let entity = NSEntityDescription.insertNewObject(forEntityName: "HiddenHabitEntity", into: context)
-                entity.setValue(UUID(), forKey: "id")
-                entity.setValue(habitID, forKey: "habitID")
-                entity.setValue(dateKey, forKey: "dateKey")
-                entity.setValue(Date(), forKey: "createdAt")
-                entity.setValue(Date(), forKey: "updatedAt")
-                hiddenHabitCount += 1
-            }
-        }
-
-        return CoreDataExperimentSummary(
-            sourceURL: sourceURL,
-            storeURL: storeURL,
-            habitCount: state.habits.count,
-            entryCount: entryCount,
-            dailyOverrideCount: dailyOverrideCount,
-            hiddenHabitCount: hiddenHabitCount
+        return CoreDataExperimentSyncMarkerResult(
+            dateKey: dateKey,
+            title: title,
+            visibleHabitCount: summary.visibleHabitCount,
+            storeURL: storeURL()
         )
-    }
-
-    private static func makeContainer() throws -> NSPersistentContainer {
-        let model = makeModel()
-        let container = NSPersistentContainer(name: "KiteCoreDataExperiment", managedObjectModel: model)
-        let description = NSPersistentStoreDescription(url: storeURL())
-        description.type = NSSQLiteStoreType
-        description.shouldMigrateStoreAutomatically = true
-        description.shouldInferMappingModelAutomatically = true
-        container.persistentStoreDescriptions = [description]
-
-        var loadError: Error?
-        container.loadPersistentStores { _, error in
-            loadError = error
-        }
-
-        if let loadError {
-            throw CoreDataExperimentError.storeLoadFailed(loadError)
-        }
-
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        return container
-    }
-
-    private static func resetExperimentData(in context: NSManagedObjectContext) throws {
-        for entityName in ["HabitEntity", "HabitEntryEntity", "DailyOverrideEntity", "HiddenHabitEntity"] {
-            let request = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-            let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
-            try context.execute(deleteRequest)
-        }
-    }
-
-    private static func fetchObjects(
-        entityName: String,
-        dateKey: String? = nil,
-        in context: NSManagedObjectContext
-    ) throws -> [NSManagedObject] {
-        let request = NSFetchRequest<NSManagedObject>(entityName: entityName)
-        if let dateKey {
-            request.predicate = NSPredicate(format: "dateKey == %@", dateKey)
-        }
-        return try context.fetch(request)
-    }
-
-    private static func habitApplies(_ object: NSManagedObject, on dateKey: String) -> Bool {
-        if let startDateKey = object.value(forKey: "startDateKey") as? String,
-           startDateKey > dateKey {
-            return false
-        }
-        if let endDateKey = object.value(forKey: "endDateKey") as? String,
-           endDateKey < dateKey {
-            return false
-        }
-
-        let repeatKind = object.value(forKey: "repeatKind") as? String ?? HabitRepeatKind.daily.rawValue
-        guard repeatKind != HabitRepeatKind.daily.rawValue else { return true }
-
-        let weekday = HabitDate.calendar.component(.weekday, from: HabitDate.date(from: dateKey))
-        switch HabitRepeatKind(rawValue: repeatKind) {
-        case .weekdays:
-            return (2...6).contains(weekday)
-        case .weekends:
-            return weekday == 1 || weekday == 7
-        case .custom:
-            let weekdays = (object.value(forKey: "repeatWeekdays") as? String ?? "")
-                .split(separator: ",")
-                .compactMap { Int($0) }
-            return weekdays.contains(weekday)
-        case .daily, .none:
-            return true
-        }
-    }
-
-    private static func makeModel() -> NSManagedObjectModel {
-        let model = NSManagedObjectModel()
-        model.entities = [
-            makeHabitEntity(),
-            makeHabitEntryEntity(),
-            makeDailyOverrideEntity(),
-            makeHiddenHabitEntity()
-        ]
-        return model
-    }
-
-    private static func makeHabitEntity() -> NSEntityDescription {
-        makeEntity(
-            name: "HabitEntity",
-            properties: [
-                attribute("id", .UUIDAttributeType, optional: false),
-                attribute("title", .stringAttributeType, optional: false),
-                attribute("baseTitle", .stringAttributeType, optional: false),
-                attribute("createdAt", .dateAttributeType, optional: false),
-                attribute("updatedAt", .dateAttributeType, optional: false),
-                attribute("deletedAt", .dateAttributeType),
-                attribute("startDateKey", .stringAttributeType),
-                attribute("endDateKey", .stringAttributeType),
-                attribute("repeatKind", .stringAttributeType, optional: false),
-                attribute("repeatWeekdays", .stringAttributeType, optional: false),
-                attribute("titleHistoryJSON", .stringAttributeType, optional: false)
-            ]
-        )
-    }
-
-    private static func makeHabitEntryEntity() -> NSEntityDescription {
-        makeEntity(
-            name: "HabitEntryEntity",
-            properties: datedHabitProperties() + [
-                attribute("isDone", .booleanAttributeType, optional: false)
-            ]
-        )
-    }
-
-    private static func makeDailyOverrideEntity() -> NSEntityDescription {
-        makeEntity(
-            name: "DailyOverrideEntity",
-            properties: datedHabitProperties() + [
-                attribute("title", .stringAttributeType, optional: false)
-            ]
-        )
-    }
-
-    private static func makeHiddenHabitEntity() -> NSEntityDescription {
-        makeEntity(name: "HiddenHabitEntity", properties: datedHabitProperties())
-    }
-
-    private static func datedHabitProperties() -> [NSAttributeDescription] {
-        [
-            attribute("id", .UUIDAttributeType, optional: false),
-            attribute("habitID", .UUIDAttributeType, optional: false),
-            attribute("dateKey", .stringAttributeType, optional: false),
-            attribute("createdAt", .dateAttributeType, optional: false),
-            attribute("updatedAt", .dateAttributeType, optional: false),
-            attribute("deletedAt", .dateAttributeType)
-        ]
-    }
-
-    private static func makeEntity(name: String, properties: [NSPropertyDescription]) -> NSEntityDescription {
-        let entity = NSEntityDescription()
-        entity.name = name
-        entity.managedObjectClassName = "NSManagedObject"
-        entity.properties = properties
-        return entity
-    }
-
-    private static func attribute(
-        _ name: String,
-        _ type: NSAttributeType,
-        optional: Bool = true
-    ) -> NSAttributeDescription {
-        let attribute = NSAttributeDescription()
-        attribute.name = name
-        attribute.attributeType = type
-        attribute.isOptional = optional
-        return attribute
-    }
-
-    private static func encodeJSONString<T: Encodable>(_ value: T) -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        guard let data = try? encoder.encode(value),
-              let text = String(data: data, encoding: .utf8)
-        else {
-            return "{}"
-        }
-        return text
     }
 
     private static func appStateURL(directoryName: String) -> URL {
@@ -435,15 +231,30 @@ enum HabitCoreDataExperiment {
             .appendingPathComponent(HabitStore.fileName)
     }
 
-    private static func storeURL() -> URL {
-        let directory = applicationSupportURL()
-            .appendingPathComponent("KiteNative-CoreDataExperiment", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory.appendingPathComponent(storeFileName)
+    private static let syncMarkerTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "HHmmss"
+        return formatter
+    }()
+
+    static func storeURL() -> URL {
+        HabitSyncStoreFactory.storeURL(directoryName: directoryName, fileName: storeFileName, mode: storeMode)
     }
 
-    private static func applicationSupportURL() -> URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    private static func experimentStore() -> HabitCoreDataStore {
+        HabitSyncStoreFactory.makeStore(directoryName: directoryName, fileName: storeFileName, mode: storeMode)
+    }
+}
+
+struct HabitCoreDataExperimentStore: HabitSyncStore {
+    func daySnapshot(for date: Date) throws -> HabitDaySnapshot {
+        try HabitSyncStoreFactory.makeStore(
+            directoryName: HabitCoreDataExperiment.directoryName,
+            fileName: HabitCoreDataExperiment.storeFileName,
+            mode: HabitCoreDataExperiment.storeMode
+        )
+        .daySnapshot(for: date)
     }
 }
 #endif
